@@ -47,49 +47,65 @@ public class DemoActivity extends AppCompatActivity implements DownLoadListener{
         findViewById(R.id.btn_add).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                DownLoader.getInstance().add("http://res9.d.cn/android/yxzx.apk");
+                DownLoader.getInstance().add("http://res9.d.cn/android/yxzx.apk",System.currentTimeMillis()+"-yxzx");
             }
         });
 
         adapter = new DownLoadAdapter(this);
+        adapter.setListener(new DownLoadAdapter.Listener() {
+            @Override
+            public void onCancel(View view, int position) {
+                Log.d(TAG, "onClick: 删除:"+position);
+                DownLoadTask task = (DownLoadTask) adapter.getItem(position);
+                DownLoader.getInstance().cancel(task.getId());
+            }
+        });
+
         ListView listView = (ListView) findViewById(R.id.listview);
         listView.setAdapter(adapter);
-
     }
 
     @Override
     protected void onDestroy() {
         DownLoader.getInstance().removeListener(this);
-
         super.onDestroy();
     }
 
     @Override
     public void onAddTask(DownLoadTask task) {
-        Log.d(TAG, "onAddTask: 添加任务 "+task.fileName);
+        Log.d(TAG, "onAddTask: 添加任务 "+task.getFileName());
         adapter.add(task);
     }
 
     @Override
     public void onCancelTask(DownLoadTask task) {
-        Log.d(TAG, "onAddTask: 取消任务 "+task.fileName);
+        Log.d(TAG, "onAddTask: 取消任务 "+task.getFileName());
+        adapter.remove(task);
     }
 
     @Override
     public void onTaskStart(DownLoadTask task) {
-        Log.d(TAG, "onTaskStart: 启动任务 "+task.fileName);
+        Log.d(TAG, "onTaskStart: 启动任务 "+task.getFileName());
     }
 
     @Override
     public void onTaskProcess(DownLoadTask task) {
-        Log.d(TAG, "onTaskProcess: 执行任务 "+task.fileName+" 进度:"+task.finishedLength+"/"+task.contentLength);
-        adapter.notifyDataSetChanged();
+        Log.d(TAG, "onTaskProcess: 执行任务 "+task.getFileName()+" 进度:"+task.getFinishedLength()+"/"+task.getContentLength());
+        if (!adapter.isTouching){
+            adapter.notifyDataSetChanged();
+        }
+
     }
 
     @Override
     public void onTaskFinished(DownLoadTask task) {
-        Log.d(TAG, "onTaskFinished: 下载完成:"+task.fileName);
-        adapter.remove(task);
+        Log.d(TAG, "onTaskFinished: 下载完成:"+task.getFileName());
+        //adapter.remove(task);
+    }
+
+    @Override
+    public void onTaskError(DownLoadTask task) {
+        Log.d(TAG, "onTaskFinished: 下载失败:"+task.getFileName());
     }
 
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,

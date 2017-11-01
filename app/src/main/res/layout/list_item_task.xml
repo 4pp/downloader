@@ -13,7 +13,6 @@
     <ProgressBar
         android:layout_marginTop="10dp"
         android:id="@+id/progress"
-        android:progress="100"
         style="@android:style/Widget.ProgressBar.Horizontal"
         android:layout_width="match_parent"
         android:layout_height="10dp" />
@@ -28,6 +27,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
         <Button
+            android:id="@+id/btn_cancel"
             android:layout_alignParentRight="true"
             android:text="取消"
             android:layout_width="wrap_content"

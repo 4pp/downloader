@@ -1,13 +1,17 @@
 package com.zsp.filedownloader.demo;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.zsp.filedownloader.Const;
 import com.zsp.filedownloader.DownLoadTask;
 import com.zsp.filedownloader.R;
 
@@ -20,21 +24,29 @@ import java.util.List;
 
 public class DownLoadAdapter extends BaseAdapter {
 
-    List<DownLoadTask> dataSource;
-    Context ctx;
+    private static final String TAG = "DownLoadAdapter";
 
-    public DownLoadAdapter(Context context){
+    Context ctx;
+    Listener listener;
+    List<DownLoadTask> dataSource;
+    boolean isTouching;
+
+    public DownLoadAdapter(Context context) {
         dataSource = new ArrayList();
         ctx = context;
-
     }
 
-    public void add(DownLoadTask task){
+    public void setListener(Listener listener){
+        this.listener = listener;
+    }
+
+    public void add(DownLoadTask task) {
         dataSource.add(task);
         notifyDataSetChanged();
+
     }
 
-    public void remove(DownLoadTask task){
+    public void remove(DownLoadTask task) {
         dataSource.remove(task);
         notifyDataSetChanged();
     }
@@ -57,6 +69,7 @@ public class DownLoadAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder holder;
+        CancelClick cancelClick;
 
         if (convertView == null) {
             LayoutInflater mInflater = LayoutInflater.from(ctx);
@@ -66,25 +79,111 @@ public class DownLoadAdapter extends BaseAdapter {
             holder.name = (TextView) convertView.findViewById(R.id.name);
             holder.state = (TextView) convertView.findViewById(R.id.state);
             holder.progressBar = (ProgressBar) convertView.findViewById(R.id.progress);
+
+            holder.btnCancel = (Button) convertView.findViewById(R.id.btn_cancel);
+            cancelClick = new CancelClick();
+            holder.btnCancel.setOnClickListener(cancelClick);
+            convertView.setTag(holder.btnCancel.getId(),cancelClick);
+
             convertView.setTag(holder);
+
+            holder.btnCancel.setOnTouchListener(new ItemTouch());
+
         } else {
             holder = (ViewHolder) convertView.getTag();
+            cancelClick = (CancelClick) convertView.getTag(holder.btnCancel.getId());
         }
+
+        cancelClick.setPosition(position);
+        cancelClick.setListener(listener);
+
+
         DownLoadTask task = dataSource.get(position);
-        holder.name.setText(task.downloadUrl);
-        if (task.contentLength > 0){
-            int progress = (int)(task.finishedLength * 1.0f / task.contentLength * 100);
+        holder.name.setText(task.getDownloadUrl());
+        if (task.getContentLength() > 0) {
+            int progress = (int) (task.getFinishedLength() * 1.0f / task.getContentLength() * 100);
             holder.progressBar.setProgress(progress);
         }
-        holder.state.setText(task.finishedLength+"/"+task.contentLength);
+
+        if (task.getState() == Const.DOWNLOAD_STATE_WAIT){
+            holder.state.setText("等待");
+        }else if(task.getState() == Const.DOWNLOAD_STATE_STOP){
+            holder.state.setText("停止");
+        }else if(task.getState() == Const.DOWNLOAD_STATE_DOWNLOADING){
+            holder.state.setText("已下载"+task.getFinishedLength() + "/" + task.getContentLength());
+        }else if(task.getState() == Const.DOWNLOAD_STATE_ERROR){
+            holder.state.setText("失败");
+        }else if(task.getState() == Const.DOWNLOAD_STATE_FINISH){
+            holder.state.setText("完成");
+        }
+
         return convertView;
     }
 
-    private static class ViewHolder
-    {
+    private static class ViewHolder {
         ProgressBar progressBar;
         TextView name;
         TextView state;
+        Button btnCancel;
     }
 
+    public class ItemTouch implements View.OnTouchListener{
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            switch (event.getAction()){
+                case MotionEvent.ACTION_DOWN:
+                    Log.e("test","ACTION_DOWN");
+                    isTouching = true;
+                    break;
+
+                case MotionEvent.ACTION_MOVE:
+                    Log.e("test","ACTION_MOVE");
+
+                    break;
+
+                case MotionEvent.ACTION_UP:
+                    Log.e("test","ACTION_UP");
+                    isTouching = false;
+                    break;
+
+                case MotionEvent.ACTION_CANCEL:
+                    Log.e("test","ACTION_CANCEL");
+                    isTouching = false;
+                    break;
+
+            }
+            return false;
+        }
+    }
+
+    public static class BaseItemClick implements View.OnClickListener{
+
+        public int position;
+        public Listener listener;
+
+        public void setPosition(int position) {
+            this.position = position;
+        }
+
+        public void setListener(Listener listener) {
+            this.listener = listener;
+        }
+
+        @Override
+        public void onClick(View v) {}
+    }
+
+    public static class CancelClick extends BaseItemClick{
+        @Override
+        public void onClick(View v) {
+            if (listener!=null){
+                listener.onCancel(v,position);
+            }
+        }
+    }
+
+    interface Listener {
+        void onCancel(View view, int position);
+    }
 }

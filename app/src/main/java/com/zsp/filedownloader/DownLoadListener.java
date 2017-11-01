@@ -15,4 +15,6 @@ public interface DownLoadListener {
     void onTaskProcess(DownLoadTask task);
 
     void onTaskFinished(DownLoadTask task);
+
+    void onTaskError(DownLoadTask task);
 }

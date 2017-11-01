@@ -14,13 +14,19 @@ import java.util.concurrent.Executors;
 
 public class Dispatcher {
 
-    private int maxRequests = 10;
+    private DownLoader downLoader;
+    private int maxTasks;
 
-    private final Deque<DownLoadTask> readyAsyncCalls = new ArrayDeque<>();
+    public Dispatcher(DownLoader downLoader){
+        this.downLoader = downLoader;
+        maxTasks = this.downLoader.getConfig().getMaxTasks();
+    }
 
-    private final Deque<DownLoadTask> runningAsyncCalls = new ArrayDeque<>();
+    private final Deque<DownLoadTask> readyTasks = new ArrayDeque<>();
 
-    private final Map<String, DownLoadTask> allAsyncCalls = new HashMap<>();
+    private final Deque<DownLoadTask> runningTasks = new ArrayDeque<>();
+
+    private final Map<String, DownLoadTask> allTasks = new HashMap<>();
 
     private ExecutorService executorService;
 
@@ -32,47 +38,47 @@ public class Dispatcher {
     }
 
     synchronized void enqueue(DownLoadTask task) {
-        if (runningAsyncCalls.size() < maxRequests) {
-            runningAsyncCalls.add(task);
+        if (runningTasks.size() < maxTasks) {
+            runningTasks.add(task);
             executorService().execute(task);
         } else {
-            readyAsyncCalls.add(task);
+            readyTasks.add(task);
         }
-        allAsyncCalls.put(task.id, task);
+        allTasks.put(task.getId(), task);
 
     }
 
     synchronized void finished(DownLoadTask call) {
-        if (!runningAsyncCalls.remove(call)) throw new AssertionError("AsyncCall wasn't running!");
-        allAsyncCalls.remove(call.id);
+        if (!runningTasks.remove(call)) throw new AssertionError("Task wasn't running!");
+        allTasks.remove(call.getId());
         promoteCalls();
     }
 
     private void promoteCalls() {
-        if (runningAsyncCalls.size() >= maxRequests) return; // Already running max capacity.
-        if (readyAsyncCalls.isEmpty()) return; // No ready calls to promote.
+        if (runningTasks.size() >= maxTasks) return;
+        if (readyTasks.isEmpty()) return;
 
-        for (Iterator<DownLoadTask> i = readyAsyncCalls.iterator(); i.hasNext(); ) {
+        for (Iterator<DownLoadTask> i = readyTasks.iterator(); i.hasNext(); ) {
             DownLoadTask call = i.next();
             i.remove();
 
-            runningAsyncCalls.add(call);
+            runningTasks.add(call);
             executorService().execute(call);
 
-            if (runningAsyncCalls.size() >= maxRequests) return; // Reached max capacity.
+            if (runningTasks.size() >= maxTasks) return;
         }
     }
 
     public synchronized DownLoadTask cancel(String id) {
-        DownLoadTask task = allAsyncCalls.get(id);
+        DownLoadTask task = allTasks.get(id);
 
-        if (runningAsyncCalls.contains(task)) {
+        if (runningTasks.contains(task)) {
             task.cancel();
         }
 
-        if (readyAsyncCalls.contains(task)) {
-            readyAsyncCalls.remove(task);
-            allAsyncCalls.remove(id);
+        if (readyTasks.contains(task)) {
+            readyTasks.remove(task);
+            allTasks.remove(id);
         }
 
         return task;
@@ -80,13 +86,13 @@ public class Dispatcher {
 
     public synchronized void cancelAll() {
 
-        for (DownLoadTask task : readyAsyncCalls) {
+        for (DownLoadTask task : readyTasks) {
             task.cancel();
-            readyAsyncCalls.remove(task);
-            allAsyncCalls.remove(task.id);
+            readyTasks.remove(task);
+            allTasks.remove(task.getId());
         }
 
-        for (DownLoadTask call : runningAsyncCalls) {
+        for (DownLoadTask call : runningTasks) {
             call.cancel();
         }
     }

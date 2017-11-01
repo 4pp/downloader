@@ -1,5 +1,6 @@
 package com.zsp.filedownloader;
 
+import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.File;
@@ -20,48 +21,114 @@ import java.util.concurrent.Executors;
 public class DownLoadTask implements Runnable {
     private static final String TAG = "DownLoadTask";
 
+    private long lastTime;
+    private long delayTime;
+
     DownLoader downLoader;
-    public String id;
-    public String downloadUrl;
-    public String fileName;
-    public long contentLength;
-    public long finishedLength;
+    private String id;
+    private String downloadUrl;
+    private String fileName;
+    private long contentLength;
+    private long finishedLength;
 
-    public long createAt;
-    public String savePath;
-    ExecutorService executorService;
-    ArrayList<SubTask> subTaskArray;
-    CountDownLatch countDownLatch;
+    public String getId() {
+        return id;
+    }
 
-    public int state = Const.DOWNLOAD_STATE_WAIT;
+    public String getSavePath() {
+        return savePath;
+    }
 
-    int subMax = 3;
+    public String getDownloadUrl() {
+        return downloadUrl;
+    }
 
-    InputStream inputStream;
-    RandomAccessFile file;
-    HttpURLConnection conn;
+    public String getFileName() {
+        return fileName;
+    }
+
+    public long getContentLength() {
+        return contentLength;
+    }
+
+    public long getFinishedLength() {
+        return finishedLength;
+    }
+
+    public long getCreateAt() {
+        return createAt;
+    }
+
+    public int getSubTaskCount(){
+        return subTaskArray == null ? 0 :subTaskArray.size();
+    }
+
+    private long createAt;
+    private String savePath;
+    private ExecutorService executorService;
+    private ArrayList<SubTask> subTaskArray;
+    private CountDownLatch countDownLatch;
+
+    private int maxThreads;
+    private InputStream inputStream;
+    private RandomAccessFile file;
+    private HttpURLConnection conn;
+
+    private int state = Const.DOWNLOAD_STATE_WAIT;
+
+    public void setState(int state) {
+        this.state = state;
+    }
+
+    public int getState() {
+        return state;
+    }
+
+
 
     public DownLoadTask(DownLoader downLoader, String url) {
+        this(downLoader, url, null);
+    }
+
+    public DownLoadTask(DownLoader downLoader, String url, String saveFileName) {
         this.downLoader = downLoader;
+        this.maxThreads = downLoader.getConfig().getMaxThreads();
         id = System.currentTimeMillis() + "|" + url;
         createAt = System.currentTimeMillis();
         downloadUrl = url;
-        fileName = downloadUrl.substring(downloadUrl.lastIndexOf("/"));
-        savePath = downLoader.getConfig().saveDir + fileName;
+
+        if (TextUtils.isEmpty(saveFileName)) {
+            fileName = downloadUrl.substring(downloadUrl.lastIndexOf("/"));
+            ;
+            if (TextUtils.isEmpty(fileName)) {
+                fileName = "download-" + System.currentTimeMillis();
+            }
+        } else {
+            String suffix = downloadUrl.substring(downloadUrl.lastIndexOf("."));
+            if (TextUtils.isEmpty(suffix)) {
+                fileName = saveFileName;
+            } else {
+                fileName = saveFileName + suffix;
+            }
+        }
+
+        savePath = downLoader.getConfig().getSaveDir() + fileName;
+
+
     }
 
     @Override
     public void run() {
-        state = Const.DOWNLOAD_STATE_DOWNLOADING;
-        downLoader.onTaskStart(this);
+
         try {
             URL url = new URL(downloadUrl);
             conn = (HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(10 * 1000);
             conn.setRequestMethod("GET");
             int code = conn.getResponseCode();
-
             if (code == 200) {
+                setState(Const.DOWNLOAD_STATE_DOWNLOADING);
+                downLoader.onTaskStart(this);
                 contentLength = conn.getContentLength();
                 try {
                     file = new RandomAccessFile(savePath, "rwd");
@@ -72,20 +139,21 @@ public class DownLoadTask implements Runnable {
 
                 long size = contentLength / 1024;
 
-                Log.d(TAG, "run: contentLength:" + size + "kb" + " len:" + contentLength);
-                if (size > 100) {
+                Log.d(TAG, "下载内容 contentLength:" + size + "kb" + " len:" + contentLength);
+                if (size > downLoader.getConfig().getSingleTaskThreshold()) {
                     multipleTaskDownloading();
                 } else {
                     singleTaskDownloading();
                 }
-
-                Log.d(TAG, "run: 下载文件完成" + finishedLength + "/" + contentLength);
+                Log.d(TAG, "下载完成" + finishedLength + "/" + contentLength);
             } else {
 
             }
+            setState(Const.DOWNLOAD_STATE_FINISH);
         } catch (Exception e) {
             e.printStackTrace();
-            state = Const.DOWNLOAD_STATE_STOP;
+            setState(Const.DOWNLOAD_STATE_ERROR);
+            downLoader.onTaskError(this);
         } finally {
             downLoader.onTaskFinished(this);
             downLoader.dispatcher().finished(this);
@@ -95,14 +163,14 @@ public class DownLoadTask implements Runnable {
 
     private void multipleTaskDownloading() {
         executorService = Executors.newCachedThreadPool();
-        subTaskArray = new ArrayList(subMax);
-        countDownLatch = new CountDownLatch(subMax);
+        subTaskArray = new ArrayList(maxThreads);
+        countDownLatch = new CountDownLatch(maxThreads);
 
-        int blockSize = (int) (contentLength / subMax);
-        for (int i = 0; i < subMax; i++) {
+        int blockSize = (int) (contentLength / maxThreads);
+        for (int i = 0; i < maxThreads; i++) {
             long start = i * blockSize;
             long end = (i + 1) * blockSize;
-            if (i == subMax - 1) {
+            if (i == maxThreads - 1) {
                 // subTask.endLocation  +=  (length % blockSize);
                 end = contentLength;
             }
@@ -119,24 +187,34 @@ public class DownLoadTask implements Runnable {
         }
     }
 
-    private void singleTaskDownloading() {
-        try {
-            inputStream = conn.getInputStream();
-            byte[] buf = new byte[1024];
-            int len = 0;
-            while (state == Const.DOWNLOAD_STATE_DOWNLOADING && (len = inputStream.read(buf)) != -1) {
-                file.write(buf, 0, len);
-                finishedLength += len;
-                downLoader.onTaskProcess(this);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void singleTaskDownloading() throws IOException {
+        inputStream = conn.getInputStream();
+        byte[] buf = new byte[1024];
+        int len = 0;
+        while (state == Const.DOWNLOAD_STATE_DOWNLOADING && (len = inputStream.read(buf)) != -1) {
+            file.write(buf, 0, len);
+            finishedLength += len;
+            updateProcess();
+
         }
     }
 
     public synchronized void appendFinished(long len) {
         finishedLength += len;
-        downLoader.onTaskProcess(this);
+        updateProcess();
+    }
+
+    public void updateProcess() {
+        long curTime = System.currentTimeMillis();
+        long interval = curTime - lastTime;
+        delayTime += interval;
+        if (delayTime > downLoader.getConfig().getUpdateInterval()
+                || finishedLength == contentLength) {
+            downLoader.onTaskProcess(this);
+            delayTime = 0;
+        }
+
+        lastTime = System.currentTimeMillis();
     }
 
     public void stop() {
@@ -203,4 +281,10 @@ public class DownLoadTask implements Runnable {
     public int hashCode() {
         return id.hashCode();
     }
+
+    public void subTaskCountDown(){
+        countDownLatch.countDown();
+    }
+
+
 }

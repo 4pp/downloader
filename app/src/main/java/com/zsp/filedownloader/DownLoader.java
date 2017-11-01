@@ -44,7 +44,7 @@ public class DownLoader {
 
     public DownLoader(Config cfg) {
         config = cfg;
-        dispatcher = new Dispatcher();
+        dispatcher = new Dispatcher(this);
         listeners = new ArrayList<>();
         handler = new Handler(Looper.getMainLooper());
 
@@ -67,10 +67,14 @@ public class DownLoader {
     }
 
     public String add(String url){
-        DownLoadTask task = new DownLoadTask(this,url);
+       return add(url,null);
+    }
+
+    public String add(String url,String fileName){
+        DownLoadTask task = new DownLoadTask(this,url,fileName);
         dispatcher.enqueue(task);
         onAddTask(task);
-        return task.id;
+        return task.getId();
     }
 
     public void cancel(String id){
@@ -137,6 +141,17 @@ public class DownLoader {
                }
            }
        });
+    }
+
+    public void onTaskError(final DownLoadTask task){
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                for (DownLoadListener listener:listeners){
+                    listener.onTaskError(task);
+                }
+            }
+        });
     }
 
 }

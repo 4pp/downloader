@@ -23,7 +23,11 @@ public class SubTask implements Runnable {
     public long finishedLength;
     public long blockSize;
 
-    public int state = Const.DOWNLOAD_STATE_WAIT;
+    private int state = Const.DOWNLOAD_STATE_WAIT;
+
+    public void setState(int state){
+        this.state = state;
+    }
 
     InputStream inputStream;
     RandomAccessFile file;
@@ -31,9 +35,9 @@ public class SubTask implements Runnable {
 
     public SubTask(DownLoadTask downLoadTask, long start, long end) {
         pTask = downLoadTask;
-        id = "SubTask-" + pTask.subTaskArray.size();
-        downloadUrl = pTask.downloadUrl;
-        savePath = pTask.savePath;
+        id = "SubTask-" + pTask.getSubTaskCount();
+        downloadUrl = pTask.getDownloadUrl();
+        savePath = pTask.getSavePath();
         startPosition = start;
         endPosition = end;
         blockSize = end - start;
@@ -43,10 +47,9 @@ public class SubTask implements Runnable {
     @Override
     public void run() {
         try {
-            state = Const.DOWNLOAD_STATE_DOWNLOADING;
+            setState(Const.DOWNLOAD_STATE_DOWNLOADING);
             URL url = new URL(downloadUrl);
             conn = (HttpURLConnection) url.openConnection();
-            Log.d(TAG, "run: 子线程下载范围" + id + " " + startPosition + "-" + (endPosition - 1));
             conn.setRequestProperty("Range", "bytes=" + startPosition + "-" + (endPosition - 1));
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Charset", "UTF-8");
@@ -59,16 +62,13 @@ public class SubTask implements Runnable {
             while (state == Const.DOWNLOAD_STATE_DOWNLOADING && (len = inputStream.read(buffer)) != -1) {
                 file.write(buffer, 0, len);
                 finishedLength += len;
-                Log.d(TAG, "run: 子线程:" + id + " 已下载 " + finishedLength + "/" + blockSize);
                 pTask.appendFinished(len);
             }
-            Log.d(TAG, "run: 子线程:" + id + "下载完成");
-            state = Const.DOWNLOAD_STATE_FINISH;
+            setState(Const.DOWNLOAD_STATE_FINISH);
         } catch (Exception e) {
-            e.printStackTrace();
-            state = Const.DOWNLOAD_STATE_STOP;
+            setState(Const.DOWNLOAD_STATE_ERROR);
         } finally {
-            pTask.countDownLatch.countDown();
+            pTask.subTaskCountDown();
             closeIO();
         }
     }
