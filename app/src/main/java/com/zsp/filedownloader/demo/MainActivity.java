@@ -1,5 +1,6 @@
 package com.zsp.filedownloader.demo;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Environment;
 import android.support.annotation.NonNull;
@@ -18,8 +19,6 @@ import java.io.File;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
-
-    String taskID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,27 +40,15 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        findViewById(R.id.btn_down).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.btn_go).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-              taskID = DownLoader.getInstance().add("http://res9.d.cn/android/yxzx.apk");
-               // DownLoader.getInstance().add("http://192.168.3.6:8080/123.zip");
+                Intent intent = new Intent(MainActivity.this,DemoActivity.class);
+                startActivity(intent);
             }
         });
 
-        findViewById(R.id.btn_cancel).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                DownLoader.getInstance().cancel(taskID);
-            }
-        });
 
-        findViewById(R.id.btn_cancel_all).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                DownLoader.getInstance().cancelAll();
-            }
-        });
     }
 
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,

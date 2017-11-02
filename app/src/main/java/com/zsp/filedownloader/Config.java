@@ -1,7 +1,7 @@
 package com.zsp.filedownloader;
 
 /**
- * Created by zsp on 2017/10/27.
+ * Created by zsp on 2017/10/30.
  */
 
 public class Config {
@@ -48,7 +48,7 @@ public class Config {
         //每个下载任务的最大线程数量
         private int maxThreads = 3;
         //最大并发下载任务数量
-        private int maxTasks = 10;
+        private int maxTasks = 2;
         //下载进度更新回调间隔时间,单位毫秒
         private int updateInterval = 50;
         //启用任务内多线程下载的数据量的临界值,单位KB

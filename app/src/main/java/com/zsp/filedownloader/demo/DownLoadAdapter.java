@@ -16,6 +16,7 @@ import com.zsp.filedownloader.DownLoadTask;
 import com.zsp.filedownloader.R;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -32,7 +33,7 @@ public class DownLoadAdapter extends BaseAdapter {
     boolean isTouching;
 
     public DownLoadAdapter(Context context) {
-        dataSource = new ArrayList();
+        dataSource = new LinkedList<>();
         ctx = context;
     }
 
@@ -44,6 +45,11 @@ public class DownLoadAdapter extends BaseAdapter {
         dataSource.add(task);
         notifyDataSetChanged();
 
+    }
+
+    public void setDataSource(List<DownLoadTask> list){
+        dataSource = list;
+        notifyDataSetChanged();
     }
 
     public void remove(DownLoadTask task) {
@@ -103,12 +109,16 @@ public class DownLoadAdapter extends BaseAdapter {
         if (task.getContentLength() > 0) {
             int progress = (int) (task.getFinishedLength() * 1.0f / task.getContentLength() * 100);
             holder.progressBar.setProgress(progress);
+        }else{
+            holder.progressBar.setProgress(0);
         }
 
         if (task.getState() == Const.DOWNLOAD_STATE_WAIT){
             holder.state.setText("等待");
         }else if(task.getState() == Const.DOWNLOAD_STATE_STOP){
-            holder.state.setText("停止");
+            holder.state.setText("已停止");
+        }else if(task.getState() == Const.DOWNLOAD_STATE_CONNECT){
+            holder.state.setText("连接中");
         }else if(task.getState() == Const.DOWNLOAD_STATE_DOWNLOADING){
             holder.state.setText("已下载"+task.getFinishedLength() + "/" + task.getContentLength());
         }else if(task.getState() == Const.DOWNLOAD_STATE_ERROR){

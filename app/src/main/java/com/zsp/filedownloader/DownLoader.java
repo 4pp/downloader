@@ -4,10 +4,13 @@ import android.os.Handler;
 import android.os.Looper;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
  * Created by zsp on 2017/10/27.
+ * 下载器使用入口
  */
 
 public class DownLoader {
@@ -50,11 +53,11 @@ public class DownLoader {
 
     }
 
-    public void addListener(DownLoadListener listener){
+    public void registerListener(DownLoadListener listener){
         listeners.add(listener);
     }
 
-    public void removeListener(DownLoadListener listener){
+    public void unregisterListener(DownLoadListener listener){
         listeners.remove(listener);
     }
 
@@ -79,7 +82,19 @@ public class DownLoader {
 
     public void cancel(String id){
         DownLoadTask task = dispatcher.cancel(id);
+        task.setState(Const.DOWNLOAD_STATE_CANCEL);
         onCancelTask(task);
+    }
+
+    public List<DownLoadTask> getTasks(){
+        List<DownLoadTask> list = dispatcher().getTasks();
+        Collections.sort(list, new Comparator<DownLoadTask>() {
+            @Override
+            public int compare(DownLoadTask o1, DownLoadTask o2) {
+                return o2.getSortLevel() - o1.getSortLevel();
+            }
+        });
+        return list;
     }
 
     public void cancelAll(){
@@ -108,16 +123,28 @@ public class DownLoader {
        });
     }
 
-    public void onTaskFinished(final DownLoadTask task){
+    public void onTaskConnect(final DownLoadTask task){
+        task.setState(Const.DOWNLOAD_STATE_CONNECT);
         handler.post(new Runnable() {
             @Override
             public void run() {
                 for (DownLoadListener listener:listeners){
-                    listener.onTaskFinished(task);
+                    listener.onTaskConnect(task);
                 }
             }
         });
+    }
 
+    public void onTaskStart(final DownLoadTask task){
+        task.setState(Const.DOWNLOAD_STATE_DOWNLOADING);
+       handler.post(new Runnable() {
+           @Override
+           public void run() {
+               for (DownLoadListener listener:listeners){
+                   listener.onTaskStart(task);
+               }
+           }
+       });
     }
 
     public void onTaskProcess(final DownLoadTask task){
@@ -132,26 +159,39 @@ public class DownLoader {
 
     }
 
-    public void onTaskStart(final DownLoadTask task){
-       handler.post(new Runnable() {
-           @Override
-           public void run() {
-               for (DownLoadListener listener:listeners){
-                   listener.onTaskStart(task);
-               }
-           }
-       });
-    }
-
-    public void onTaskError(final DownLoadTask task){
+    public void onTaskStop(final DownLoadTask task){
         handler.post(new Runnable() {
             @Override
             public void run() {
                 for (DownLoadListener listener:listeners){
-                    listener.onTaskError(task);
+                    listener.onTaskStop(task);
                 }
             }
         });
     }
 
+    public void onTaskError(final DownLoadTask task,final String msg){
+        task.setState(Const.DOWNLOAD_STATE_ERROR);
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                for (DownLoadListener listener:listeners){
+                    listener.onTaskError(task,msg);
+                }
+            }
+        });
+    }
+
+
+    public void onTaskFinished(final DownLoadTask task){
+        task.setState(Const.DOWNLOAD_STATE_FINISH);
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                for (DownLoadListener listener:listeners){
+                    listener.onTaskFinished(task);
+                }
+            }
+        });
+    }
 }

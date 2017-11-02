@@ -10,12 +10,16 @@ import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
- * Created by zsp on 2017/10/27.
+ * Created by zsp on 2017/10/30.
+ * 下载任务
  */
 
 public class DownLoadTask implements Runnable {
@@ -23,6 +27,7 @@ public class DownLoadTask implements Runnable {
 
     private long lastTime;
     private long delayTime;
+    private int sortLevel;
 
     DownLoader downLoader;
     private String id;
@@ -55,12 +60,16 @@ public class DownLoadTask implements Runnable {
         return finishedLength;
     }
 
+    public int getSortLevel() {
+        return sortLevel;
+    }
+
     public long getCreateAt() {
         return createAt;
     }
 
-    public int getSubTaskCount(){
-        return subTaskArray == null ? 0 :subTaskArray.size();
+    public int getSubTaskCount() {
+        return subTaskArray == null ? 0 : subTaskArray.size();
     }
 
     private long createAt;
@@ -77,14 +86,17 @@ public class DownLoadTask implements Runnable {
     private int state = Const.DOWNLOAD_STATE_WAIT;
 
     public void setState(int state) {
+        if (state == Const.DOWNLOAD_STATE_DOWNLOADING) {
+            sortLevel = 1;
+        } else {
+            sortLevel = 0;
+        }
         this.state = state;
     }
 
     public int getState() {
         return state;
     }
-
-
 
     public DownLoadTask(DownLoader downLoader, String url) {
         this(downLoader, url, null);
@@ -99,7 +111,6 @@ public class DownLoadTask implements Runnable {
 
         if (TextUtils.isEmpty(saveFileName)) {
             fileName = downloadUrl.substring(downloadUrl.lastIndexOf("/"));
-            ;
             if (TextUtils.isEmpty(fileName)) {
                 fileName = "download-" + System.currentTimeMillis();
             }
@@ -121,13 +132,13 @@ public class DownLoadTask implements Runnable {
     public void run() {
 
         try {
+            downLoader.onTaskConnect(this);
             URL url = new URL(downloadUrl);
             conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(10 * 1000);
+            conn.setConnectTimeout(5 * 1000);
             conn.setRequestMethod("GET");
             int code = conn.getResponseCode();
             if (code == 200) {
-                setState(Const.DOWNLOAD_STATE_DOWNLOADING);
                 downLoader.onTaskStart(this);
                 contentLength = conn.getContentLength();
                 try {
@@ -145,28 +156,39 @@ public class DownLoadTask implements Runnable {
                 } else {
                     singleTaskDownloading();
                 }
-                Log.d(TAG, "下载完成" + finishedLength + "/" + contentLength);
-            } else {
 
+                if (contentLength == finishedLength){
+                    Log.d(TAG, "下载完成" + finishedLength + "/" + contentLength);
+                    downLoader.onTaskFinished(this);
+                }else{
+                    Log.d(TAG, "下载停止" + finishedLength + "/" + contentLength);
+                    downLoader.onTaskStop(this);
+                    downLoader.dispatcher().stoped(this);
+                }
+
+                //取消和完成
+                if (state != Const.DOWNLOAD_STATE_STOP){
+                    downLoader.dispatcher().finished(this);
+                }
+            } else {
+                downLoader.onTaskError(this,"响应码:"+code);
             }
-            setState(Const.DOWNLOAD_STATE_FINISH);
+
         } catch (Exception e) {
             e.printStackTrace();
-            setState(Const.DOWNLOAD_STATE_ERROR);
-            downLoader.onTaskError(this);
+            downLoader.onTaskError(this,e.toString());
         } finally {
-            downLoader.onTaskFinished(this);
-            downLoader.dispatcher().finished(this);
             closeIO();
         }
     }
 
-    private void multipleTaskDownloading() {
+    private void multipleTaskDownloading() throws Exception {
         executorService = Executors.newCachedThreadPool();
         subTaskArray = new ArrayList(maxThreads);
         countDownLatch = new CountDownLatch(maxThreads);
 
         int blockSize = (int) (contentLength / maxThreads);
+        List<Future<Boolean>> list = new ArrayList<>(maxThreads);
         for (int i = 0; i < maxThreads; i++) {
             long start = i * blockSize;
             long end = (i + 1) * blockSize;
@@ -177,11 +199,20 @@ public class DownLoadTask implements Runnable {
             SubTask subTask = new SubTask(this, start, end);
             subTaskArray.add(subTask);
             Log.d(TAG, "run: 启动子线程" + i);
-            executorService.submit(subTask);
+            Future<Boolean> future = executorService.submit(subTask);
+            list.add(future);
         }
 
-        try {
+        try{
             countDownLatch.await();
+            for (int i = 0; i < list.size(); i++) {
+                Future<Boolean> future = list.get(i);
+                if (!future.get().booleanValue()) {
+                    throw new Exception("子线程执行失败");
+                }
+            }
+        }catch (ExecutionException e){
+            e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -195,7 +226,6 @@ public class DownLoadTask implements Runnable {
             file.write(buf, 0, len);
             finishedLength += len;
             updateProcess();
-
         }
     }
 
@@ -220,13 +250,7 @@ public class DownLoadTask implements Runnable {
     public void stop() {
         if (state == Const.DOWNLOAD_STATE_DOWNLOADING) {
             state = Const.DOWNLOAD_STATE_STOP;
-
             closeIO();
-
-            for (int i = 0; i < subTaskArray.size(); i++) {
-                SubTask subTask = subTaskArray.get(i);
-                subTask.stop();
-            }
         }
     }
 
@@ -248,14 +272,14 @@ public class DownLoadTask implements Runnable {
             e.printStackTrace();
         }
 
-//        try {
-//            if (conn != null) {
-//                conn.disconnect();
-//            }
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
+        try {
+            if (conn != null) {
+                conn.disconnect();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void cancel() {
@@ -282,7 +306,7 @@ public class DownLoadTask implements Runnable {
         return id.hashCode();
     }
 
-    public void subTaskCountDown(){
+    public void subTaskFinished() {
         countDownLatch.countDown();
     }
 
