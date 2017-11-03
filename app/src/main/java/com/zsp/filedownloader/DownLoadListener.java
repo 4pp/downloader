@@ -7,19 +7,19 @@ package com.zsp.filedownloader;
 public interface DownLoadListener {
 
     // 添加任务后
-    void onAddTask(DownLoadTask task);
+    void onAddTask(Task task);
     // 取消任务后
-    void onCancelTask(DownLoadTask task);
+    void onCancelTask(Task task);
     // 连接下载资源中
-    void onTaskConnect(DownLoadTask task);
+    void onTaskConnect(Task task);
     // 任务开始下载
-    void onTaskStart(DownLoadTask task);
+    void onTaskStart(Task task);
     // 停止 / 暂停 后
-    void onTaskStop(DownLoadTask task);
+    void onTaskStop(Task task);
     // 下载中 更新进度
-    void onTaskProcess(DownLoadTask task);
+    void onTaskProcess(Task task);
     // 下载成功完成后
-    void onTaskFinished(DownLoadTask task);
+    void onTaskFinished(Task task);
     // 下载错误停止后
-    void onTaskError(DownLoadTask task,String msg);
+    void onTaskError(Task task, String msg);
 }

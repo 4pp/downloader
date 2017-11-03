@@ -1,4 +1,4 @@
-package com.zsp.filedownloader;
+package com.zsp.filedownloader.record;
 
 import android.provider.BaseColumns;
 
@@ -7,7 +7,7 @@ import android.provider.BaseColumns;
  */
 
 public class SqlConst {
-    static final String TB_TASK = "task_info";
+    static final String TB_TASK = "task";
     static final String TB_TASK_URL = "download_url";
     static final String TB_TASK_DIR_PATH = "file_path";
     static final String TB_TASK_FINISHED = "finished_length";
@@ -17,10 +17,10 @@ public class SqlConst {
     static final String TB_TASK_ETAG = "e_tag";
     static final String TB_TASK_DISPOSITION = "disposition";
     static final String TB_TASK_STATE = "task_state";
-    static final String TB_SUB_TASK = "sub_task";
+    static final String TB_SUB = "sub";
     static final String TB_CREATE_AT = "create_at";
 
-    static final String TB_THREAD = "sub_task_info";
+    static final String TB_THREAD = "subtask";
     static final String TB_THREAD_START = "start";
     static final String TB_THREAD_END = "end";
     static final String TB_THREAD_FINISHED = "finished";
@@ -37,7 +37,7 @@ public class SqlConst {
             SqlConst.TB_TASK_FILE_NAME + " CHAR, " +
             SqlConst.TB_TASK_MIME_TYPE + " CHAR, " +
             SqlConst.TB_TASK_ETAG + " CHAR, " +
-            SqlConst.TB_SUB_TASK + " CHAR, " +
+            SqlConst.TB_SUB + " CHAR, " +
             SqlConst.TB_CREATE_AT + " CHAR, " +
             SqlConst.TB_TASK_DISPOSITION + " CHAR)";
 

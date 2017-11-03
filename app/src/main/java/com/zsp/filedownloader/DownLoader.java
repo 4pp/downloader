@@ -1,7 +1,10 @@
 package com.zsp.filedownloader;
 
+import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+
+import com.zsp.filedownloader.record.RecordManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,12 +18,8 @@ import java.util.List;
 
 public class DownLoader {
 
+    private static Config defConfig;
     private static DownLoader instance;
-    Dispatcher dispatcher;
-
-    List<DownLoadListener> listeners;
-
-    Handler handler;
 
     public static DownLoader getInstance() {
         if (instance == null) {
@@ -33,13 +32,14 @@ public class DownLoader {
         return instance;
     }
 
-    private static Config defConfig;
 
+    Dispatcher dispatcher;
+    List<DownLoadListener> listeners;
+    Handler handler;
     public Config config;
+    public RecordManager recordManager;
 
-    public Config getConfig() {
-        return config;
-    }
+
 
     public DownLoader() {
         this(defConfig);
@@ -50,7 +50,7 @@ public class DownLoader {
         dispatcher = new Dispatcher(this);
         listeners = new ArrayList<>();
         handler = new Handler(Looper.getMainLooper());
-
+        recordManager = new RecordManager();
     }
 
     public void registerListener(DownLoadListener listener){
@@ -61,8 +61,17 @@ public class DownLoader {
         listeners.remove(listener);
     }
 
-    public static void init(Config config) {
+    public static void init(Context context,Config config) {
         defConfig = config;
+        RecordManager.initialize(context);
+    }
+
+    public Config getConfig() {
+        return config;
+    }
+
+    public RecordManager getRecordManager() {
+        return recordManager;
     }
 
     public Dispatcher dispatcher() {
@@ -74,23 +83,23 @@ public class DownLoader {
     }
 
     public String add(String url,String fileName){
-        DownLoadTask task = new DownLoadTask(this,url,fileName);
+        Task task = new Task(this,url,fileName);
         dispatcher.enqueue(task);
         onAddTask(task);
         return task.getId();
     }
 
     public void cancel(String id){
-        DownLoadTask task = dispatcher.cancel(id);
+        Task task = dispatcher.cancel(id);
         task.setState(Const.DOWNLOAD_STATE_CANCEL);
         onCancelTask(task);
     }
 
-    public List<DownLoadTask> getTasks(){
-        List<DownLoadTask> list = dispatcher().getTasks();
-        Collections.sort(list, new Comparator<DownLoadTask>() {
+    public List<Task> getTasks(){
+        List<Task> list = dispatcher().getTasks();
+        Collections.sort(list, new Comparator<Task>() {
             @Override
-            public int compare(DownLoadTask o1, DownLoadTask o2) {
+            public int compare(Task o1, Task o2) {
                 return o2.getSortLevel() - o1.getSortLevel();
             }
         });
@@ -101,7 +110,7 @@ public class DownLoader {
         dispatcher.cancelAll();
     }
 
-    public void onAddTask(final DownLoadTask task){
+    public void onAddTask(final Task task){
         handler.post(new Runnable() {
             @Override
             public void run() {
@@ -112,7 +121,7 @@ public class DownLoader {
         });
     }
 
-    public void onCancelTask(final DownLoadTask task){
+    public void onCancelTask(final Task task){
        handler.post(new Runnable() {
            @Override
            public void run() {
@@ -123,7 +132,7 @@ public class DownLoader {
        });
     }
 
-    public void onTaskConnect(final DownLoadTask task){
+    public void onTaskConnect(final Task task){
         task.setState(Const.DOWNLOAD_STATE_CONNECT);
         handler.post(new Runnable() {
             @Override
@@ -135,7 +144,7 @@ public class DownLoader {
         });
     }
 
-    public void onTaskStart(final DownLoadTask task){
+    public void onTaskStart(final Task task){
         task.setState(Const.DOWNLOAD_STATE_DOWNLOADING);
        handler.post(new Runnable() {
            @Override
@@ -147,7 +156,7 @@ public class DownLoader {
        });
     }
 
-    public void onTaskProcess(final DownLoadTask task){
+    public void onTaskProcess(final Task task){
         handler.post(new Runnable() {
             @Override
             public void run() {
@@ -159,7 +168,7 @@ public class DownLoader {
 
     }
 
-    public void onTaskStop(final DownLoadTask task){
+    public void onTaskStop(final Task task){
         handler.post(new Runnable() {
             @Override
             public void run() {
@@ -170,7 +179,7 @@ public class DownLoader {
         });
     }
 
-    public void onTaskError(final DownLoadTask task,final String msg){
+    public void onTaskError(final Task task, final String msg){
         task.setState(Const.DOWNLOAD_STATE_ERROR);
         handler.post(new Runnable() {
             @Override
@@ -183,7 +192,7 @@ public class DownLoader {
     }
 
 
-    public void onTaskFinished(final DownLoadTask task){
+    public void onTaskFinished(final Task task){
         task.setState(Const.DOWNLOAD_STATE_FINISH);
         handler.post(new Runnable() {
             @Override

@@ -25,13 +25,13 @@ public class Dispatcher {
         maxTasks = this.downLoader.getConfig().getMaxTasks();
     }
 
-    private final Deque<DownLoadTask> pauseTasks = new ArrayDeque<>();
+    private final Deque<Task> pauseTasks = new ArrayDeque<>();
 
-    private final Deque<DownLoadTask> readyTasks = new ArrayDeque<>();
+    private final Deque<Task> readyTasks = new ArrayDeque<>();
 
-    private final Deque<DownLoadTask> runningTasks = new ArrayDeque<>();
+    private final Deque<Task> runningTasks = new ArrayDeque<>();
 
-    private final Map<String, DownLoadTask> allTasks = new HashMap<>();
+    private final Map<String, Task> allTasks = new HashMap<>();
 
     private ExecutorService executorService;
 
@@ -42,7 +42,7 @@ public class Dispatcher {
         return executorService;
     }
 
-    synchronized void enqueue(DownLoadTask task) {
+    synchronized void enqueue(Task task) {
         if (runningTasks.size() < maxTasks) {
             runningTasks.add(task);
             executorService().execute(task);
@@ -53,20 +53,20 @@ public class Dispatcher {
     }
 
 
-    synchronized void finished(DownLoadTask task) {
+    synchronized void finished(Task task) {
         if (!runningTasks.remove(task)) throw new AssertionError("Task wasn't running!");
         allTasks.remove(task.getId());
         promoteCalls();
     }
 
-    synchronized void stoped(DownLoadTask task){
+    synchronized void stoped(Task task){
         if (!runningTasks.remove(task)) throw new AssertionError("Task wasn't running!");
         pauseTasks.add(task);
         promoteCalls();
     }
 
     synchronized void restart(String id){
-        DownLoadTask task = allTasks.get(id);
+        Task task = allTasks.get(id);
         if (!pauseTasks.remove(task)) throw new AssertionError("Task wasn't running!");
 
         if (runningTasks.size() < maxTasks) {
@@ -82,8 +82,8 @@ public class Dispatcher {
         if (runningTasks.size() >= maxTasks) return;
         if (readyTasks.isEmpty()) return;
 
-        for (Iterator<DownLoadTask> i = readyTasks.iterator(); i.hasNext(); ) {
-            DownLoadTask call = i.next();
+        for (Iterator<Task> i = readyTasks.iterator(); i.hasNext(); ) {
+            Task call = i.next();
             i.remove();
 
             runningTasks.add(call);
@@ -93,8 +93,8 @@ public class Dispatcher {
         }
     }
 
-    public synchronized DownLoadTask cancel(String id) {
-        DownLoadTask task = allTasks.get(id);
+    public synchronized Task cancel(String id) {
+        Task task = allTasks.get(id);
         if (task == null){
             return null;
         }
@@ -111,8 +111,8 @@ public class Dispatcher {
         return task;
     }
 
-    public synchronized DownLoadTask stop(String id) {
-        DownLoadTask task = allTasks.get(id);
+    public synchronized Task stop(String id) {
+        Task task = allTasks.get(id);
         if (task == null){
             return null;
         }
@@ -126,21 +126,21 @@ public class Dispatcher {
 
     public synchronized void cancelAll() {
 
-        for (DownLoadTask task : readyTasks) {
+        for (Task task : readyTasks) {
             task.cancel();
             readyTasks.remove(task);
             allTasks.remove(task.getId());
         }
 
-        for (DownLoadTask call : runningTasks) {
+        for (Task call : runningTasks) {
             call.cancel();
         }
     }
 
-    public List<DownLoadTask> getTasks() {
-        List<DownLoadTask> list = new LinkedList<>();
+    public List<Task> getTasks() {
+        List<Task> list = new LinkedList<>();
         for (String key : allTasks.keySet()) {
-            DownLoadTask task = allTasks.get(key);
+            Task task = allTasks.get(key);
             list.add(task);
         }
         return list;

@@ -22,7 +22,7 @@ import java.util.concurrent.Future;
  * 下载任务
  */
 
-public class DownLoadTask implements Runnable {
+public class Task implements Runnable {
     private static final String TAG = "DownLoadTask";
 
     private long lastTime;
@@ -98,11 +98,11 @@ public class DownLoadTask implements Runnable {
         return state;
     }
 
-    public DownLoadTask(DownLoader downLoader, String url) {
+    public Task(DownLoader downLoader, String url) {
         this(downLoader, url, null);
     }
 
-    public DownLoadTask(DownLoader downLoader, String url, String saveFileName) {
+    public Task(DownLoader downLoader, String url, String saveFileName) {
         this.downLoader = downLoader;
         this.maxThreads = downLoader.getConfig().getMaxThreads();
         id = System.currentTimeMillis() + "|" + url;
@@ -296,7 +296,7 @@ public class DownLoadTask implements Runnable {
         if (this == obj) return true;
         if (obj == null) return false;
         if (getClass() != obj.getClass()) return false;
-        DownLoadTask other = (DownLoadTask) obj;
+        Task other = (Task) obj;
         if (!id.equals(other.id)) return false;
         return true;
     }

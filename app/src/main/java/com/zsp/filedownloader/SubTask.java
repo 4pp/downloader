@@ -14,7 +14,7 @@ import java.util.concurrent.Callable;
 public class SubTask implements Callable {
     private static final String TAG = "SubTask";
 
-    public DownLoadTask pTask;
+    public Task pTask;
     public String id;
     public String downloadUrl;
     public String savePath;
@@ -23,17 +23,11 @@ public class SubTask implements Callable {
     public long finishedLength;
     public long blockSize;
 
-    //private int state = Const.DOWNLOAD_STATE_WAIT;
-
-//    public void setState(int state){
-//        this.state = state;
-//    }
-
     InputStream inputStream;
     RandomAccessFile file;
     HttpURLConnection conn;
 
-    public SubTask(DownLoadTask downLoadTask, long start, long end) {
+    public SubTask(Task downLoadTask, long start, long end) {
         pTask = downLoadTask;
         id = "SubTask-" + pTask.getSubTaskCount();
         downloadUrl = pTask.getDownloadUrl();
@@ -45,10 +39,7 @@ public class SubTask implements Callable {
     }
 
 //    public void stop() {
-//        if (state == Const.DOWNLOAD_STATE_DOWNLOADING) {
-//            state = Const.DOWNLOAD_STATE_STOP;
-//            closeIO();
-//        }
+//        closeIO();
 //    }
 
     private void closeIO() {
@@ -82,7 +73,6 @@ public class SubTask implements Callable {
     @Override
     public Object call() throws Exception {
         try {
-            //setState(Const.DOWNLOAD_STATE_DOWNLOADING);
             URL url = new URL(downloadUrl);
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestProperty("Range", "bytes=" + startPosition + "-" + (endPosition - 1));
@@ -99,10 +89,8 @@ public class SubTask implements Callable {
                 finishedLength += len;
                 pTask.appendFinished(len);
             }
-            // setState(Const.DOWNLOAD_STATE_FINISH);
         } catch (Exception e) {
             e.printStackTrace();
-            // setState(Const.DOWNLOAD_STATE_ERROR);
             return false;
         } finally {
             pTask.subTaskFinished();

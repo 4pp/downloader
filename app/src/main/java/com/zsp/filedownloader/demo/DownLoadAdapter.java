@@ -12,10 +12,9 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.zsp.filedownloader.Const;
-import com.zsp.filedownloader.DownLoadTask;
+import com.zsp.filedownloader.Task;
 import com.zsp.filedownloader.R;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -29,7 +28,7 @@ public class DownLoadAdapter extends BaseAdapter {
 
     Context ctx;
     Listener listener;
-    List<DownLoadTask> dataSource;
+    List<Task> dataSource;
     boolean isTouching;
 
     public DownLoadAdapter(Context context) {
@@ -41,18 +40,18 @@ public class DownLoadAdapter extends BaseAdapter {
         this.listener = listener;
     }
 
-    public void add(DownLoadTask task) {
+    public void add(Task task) {
         dataSource.add(task);
         notifyDataSetChanged();
 
     }
 
-    public void setDataSource(List<DownLoadTask> list){
+    public void setDataSource(List<Task> list){
         dataSource = list;
         notifyDataSetChanged();
     }
 
-    public void remove(DownLoadTask task) {
+    public void remove(Task task) {
         dataSource.remove(task);
         notifyDataSetChanged();
     }
@@ -104,7 +103,7 @@ public class DownLoadAdapter extends BaseAdapter {
         cancelClick.setListener(listener);
 
 
-        DownLoadTask task = dataSource.get(position);
+        Task task = dataSource.get(position);
         holder.name.setText(task.getDownloadUrl());
         if (task.getContentLength() > 0) {
             int progress = (int) (task.getFinishedLength() * 1.0f / task.getContentLength() * 100);
