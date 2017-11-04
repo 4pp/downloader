@@ -43,8 +43,6 @@ public class DownLoader {
     public Config config;
     public RecordManager recordManager;
 
-
-
     public DownLoader() {
         this(defConfig);
     }
@@ -91,24 +89,10 @@ public class DownLoader {
         TaskRecord record = new TaskRecord();
         record.setCreateAt(System.currentTimeMillis());
         record.setDownloadUrl(url);
-
-        recordManager.task().add(record);
-
-
-        if (TextUtils.isEmpty(fileName)) {
-            fileName = url.substring(url.lastIndexOf("/"));
-            if (TextUtils.isEmpty(fileName)) {
-                fileName = "download-" + System.currentTimeMillis();
-            }
-        } else {
-            String suffix = url.substring(url.lastIndexOf("."));
-            if (!TextUtils.isEmpty(suffix)) {
-                fileName = fileName + suffix;
-            }
-        }
-
+        String saveFileName = getSaveFileName(url,fileName);
         record.setFilePath(getConfig().getSaveDir());
-        record.setFileName(fileName);
+        record.setFileName(saveFileName);
+        recordManager.task().add(record);
 
         Task task = new Task(this,record);
         dispatcher.enqueue(task);
@@ -228,5 +212,21 @@ public class DownLoader {
                 }
             }
         });
+    }
+
+    public String getSaveFileName(String url,String fileName){
+        String saveName = fileName;
+        if (TextUtils.isEmpty(fileName)) {
+            fileName = url.substring(url.lastIndexOf("/"));
+            if (TextUtils.isEmpty(fileName)) {
+                saveName = "download-" + System.currentTimeMillis();
+            }
+        } else {
+            String suffix = url.substring(url.lastIndexOf("."));
+            if (!TextUtils.isEmpty(suffix)) {
+                saveName = fileName + suffix;
+            }
+        }
+        return saveName;
     }
 }

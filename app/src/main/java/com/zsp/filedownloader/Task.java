@@ -54,25 +54,25 @@ public class Task implements Runnable {
     public long getContentLength() {
         return record.getContentLength();
     }
-//
+    //
     public long getFinishedLength() {
         return record.getFinishedLength();
     }
-//
+    //
     public int getSortLevel() {
         return sortLevel;
     }
-//
+    //
     public long getCreateAt() {
         return record.getCreateAt();
     }
-//
-    public int getSubTaskCount() {
-        return subTaskArray == null ? 0 : subTaskArray.size();
-    }
+    //
+//    public int getSubTaskCount() {
+//        return subTaskArray == null ? 0 : subTaskArray.size();
+//    }
 
-    private ExecutorService executorService;
-    private ArrayList<SubTask> subTaskArray;
+//    private ExecutorService executorService;
+    //private ArrayList<SubTask> subTaskArray;
     private CountDownLatch countDownLatch;
 
     private int maxThreads;
@@ -112,24 +112,66 @@ public class Task implements Runnable {
             conn.setRequestMethod("GET");
             int code = conn.getResponseCode();
             if (code == 200) {
-                downLoader.onTaskStart(this);
-                int contentLength = conn.getContentLength();
-                record.setContentLength(contentLength);
-                try {
-                    String savePath = record.getFilePath() + record.getFileName();
-                    file = new RandomAccessFile(savePath, "rwd");
-                    file.setLength(contentLength);
-                } catch (Exception e) {
-                    e.printStackTrace();
+                long contentLength = conn.getContentLength();
+                //没下载过
+                if (record.getContentLength() == 0 && record.getFinishedLength() == 0){
+                    record.setContentLength(contentLength);
+                    try {
+                        String savePath = record.getFilePath() + record.getFileName();
+                        file = new RandomAccessFile(savePath, "rwd");
+                        file.setLength(contentLength);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    downLoader.recordManager.task().update(record);
                 }
 
+                downLoader.onTaskStart(this);
                 long size = contentLength / 1024;
-
                 Log.d(TAG, "下载内容 contentLength:" + size + "kb" + " len:" + contentLength);
-                if (size > downLoader.getConfig().getSingleTaskThreshold()) {
-                    multipleTaskDownloading();
-                } else {
-                    singleTaskDownloading();
+
+//                if (size > downLoader.getConfig().getSingleTaskThreshold()) {
+//                    multipleTaskDownloading();
+//                } else {
+//                    singleTaskDownloading();
+//                }
+
+                int threadCount = maxThreads;
+                if (size < downLoader.getConfig().getSingleTaskThreshold()) {
+                    threadCount = 1;
+                }
+
+                ExecutorService executorService = Executors.newCachedThreadPool();
+                countDownLatch = new CountDownLatch(threadCount);
+                int blockSize = (int) (record.getContentLength() / threadCount);
+                List<Future<Boolean>> list = new ArrayList<>(threadCount);
+
+                for (int i = 0; i < threadCount; i++) {
+                    long start = i * blockSize;
+                    long end = (i + 1) * blockSize;
+                    if (i == threadCount - 1) {
+                        // subTask.endLocation  +=  (length % blockSize);
+                        end = record.getContentLength();
+                    }
+
+                    SubTaskRecord subRecord = new SubTaskRecord();
+                    downLoader.recordManager.subTask().add(subRecord);
+                    subRecord.setTaskID(record.getId());
+                    subRecord.setStart(start);
+                    subRecord.setEnd(end);
+                    SubTask subTask = new SubTask(this,subRecord);
+                    Log.d(TAG, "run: 启动子线程" + i);
+                    Future<Boolean> future = executorService.submit(subTask);
+                    list.add(future);
+                }
+
+                executorService.shutdown();
+                countDownLatch.await();
+                for (int i = 0; i < list.size(); i++) {
+                    Future<Boolean> future = list.get(i);
+                    if (!future.get().booleanValue()) {
+                        throw new Exception("子线程执行失败");
+                    }
                 }
 
                 if (record.isFinished()) {
@@ -157,59 +199,59 @@ public class Task implements Runnable {
         }
     }
 
-    private void multipleTaskDownloading() throws Exception {
-        executorService = Executors.newCachedThreadPool();
-        subTaskArray = new ArrayList(maxThreads);
-        countDownLatch = new CountDownLatch(maxThreads);
+//    private void multipleTaskDownloading() throws Exception {
+//        executorService = Executors.newCachedThreadPool();
+//        subTaskArray = new ArrayList(maxThreads);
+//        countDownLatch = new CountDownLatch(maxThreads);
+//
+//        int blockSize = (int) (record.getContentLength() / maxThreads);
+//        List<Future<Boolean>> list = new ArrayList<>(maxThreads);
+//        for (int i = 0; i < maxThreads; i++) {
+//            long start = i * blockSize;
+//            long end = (i + 1) * blockSize;
+//            if (i == maxThreads - 1) {
+//                // subTask.endLocation  +=  (length % blockSize);
+//                end = record.getContentLength();
+//            }
+//
+//            SubTaskRecord subRecord = new SubTaskRecord();
+//            downLoader.recordManager.subTask().add(subRecord);
+//            subRecord.setTaskID(record.getId());
+//            subRecord.setStart(start);
+//            subRecord.setEnd(end);
+//            SubTask subTask = new SubTask(this,subRecord);
+//            subTaskArray.add(subTask);
+//            Log.d(TAG, "run: 启动子线程" + i);
+//            Future<Boolean> future = executorService.submit(subTask);
+//            list.add(future);
+//        }
+//
+//        try {
+//            countDownLatch.await();
+//            for (int i = 0; i < list.size(); i++) {
+//                Future<Boolean> future = list.get(i);
+//                if (!future.get().booleanValue()) {
+//                    throw new Exception("子线程执行失败");
+//                }
+//            }
+//        } catch (ExecutionException e) {
+//            e.printStackTrace();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
-        int blockSize = (int) (record.getContentLength() / maxThreads);
-        List<Future<Boolean>> list = new ArrayList<>(maxThreads);
-        for (int i = 0; i < maxThreads; i++) {
-            long start = i * blockSize;
-            long end = (i + 1) * blockSize;
-            if (i == maxThreads - 1) {
-                // subTask.endLocation  +=  (length % blockSize);
-                end = record.getContentLength();
-            }
-
-            SubTaskRecord subRecord = new SubTaskRecord();
-            downLoader.recordManager.subTask().add(subRecord);
-            subRecord.setTaskID(record.getId());
-            subRecord.setStart(start);
-            subRecord.setEnd(end);
-            SubTask subTask = new SubTask(this,subRecord);
-            subTaskArray.add(subTask);
-            Log.d(TAG, "run: 启动子线程" + i);
-            Future<Boolean> future = executorService.submit(subTask);
-            list.add(future);
-        }
-
-        try {
-            countDownLatch.await();
-            for (int i = 0; i < list.size(); i++) {
-                Future<Boolean> future = list.get(i);
-                if (!future.get().booleanValue()) {
-                    throw new Exception("子线程执行失败");
-                }
-            }
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void singleTaskDownloading() throws IOException {
-        inputStream = conn.getInputStream();
-        byte[] buf = new byte[1024];
-        int len = 0;
-        while (state == Const.DOWNLOAD_STATE_DOWNLOADING && (len = inputStream.read(buf)) != -1) {
-            file.write(buf, 0, len);
-            long finished = record.getFinishedLength() + len;
-            record.setFinishedLength(finished);
-            updateProcess();
-        }
-    }
+//    private void singleTaskDownloading() throws IOException {
+//        inputStream = conn.getInputStream();
+//        byte[] buf = new byte[1024];
+//        int len = 0;
+//        while (state == Const.DOWNLOAD_STATE_DOWNLOADING && (len = inputStream.read(buf)) != -1) {
+//            file.write(buf, 0, len);
+//            long finished = record.getFinishedLength() + len;
+//            record.setFinishedLength(finished);
+//            updateProcess();
+//        }
+//    }
 
     public synchronized void appendFinished(long len,long subTaskId,long subFinished) {
         long finished = record.getFinishedLength() + len;

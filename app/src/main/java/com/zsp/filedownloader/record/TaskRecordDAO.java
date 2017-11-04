@@ -3,6 +3,7 @@ package com.zsp.filedownloader.record;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.provider.BaseColumns;
 
 import com.zsp.filedownloader.Debug;
 
@@ -18,7 +19,7 @@ public class TaskRecordDAO {
     public static final String TABLE_NAME = SqlConst.TB_TASK;
 
     public long add(TaskRecord record) {
-        Debug.log("添加记录\r\n"+record);
+        Debug.log("添加任务记录" + record);
         SQLiteDatabase db = RecordManager.openDatabase();
         ContentValues values = contentValuesToRecord(record);
         long id = db.insert(TABLE_NAME, null, values);
@@ -28,23 +29,25 @@ public class TaskRecordDAO {
 
 
     public int update(TaskRecord record) {
+        Debug.log("更新任务记录" + record);
         SQLiteDatabase db = RecordManager.openDatabase();
         ContentValues values = contentValuesToRecord(record);
-        String whereClause = "id=?";
+        String whereClause = BaseColumns._ID + "=?";
         String[] whereArgs = {String.valueOf(record.getId())};
         return db.update(TABLE_NAME, values, whereClause, whereArgs);
     }
 
     public int delete(long id) {
+        Debug.log("删除任务记录" + id);
         SQLiteDatabase db = RecordManager.openDatabase();
-        String whereClause = "id=?";
+        String whereClause = BaseColumns._ID + "=?";
         String[] whereArgs = {String.valueOf(id)};
         return db.delete(TABLE_NAME, whereClause, whereArgs);
     }
 
-    public TaskRecord querySingle(String whereClause,String[] whereArgs) {
+    public TaskRecord querySingle(String whereClause, String[] whereArgs) {
         SQLiteDatabase db = RecordManager.openDatabase();
-        Cursor cursor = db.rawQuery(TABLE_NAME,whereArgs);
+        Cursor cursor = db.rawQuery(TABLE_NAME, whereArgs);
         TaskRecord record = null;
         if (cursor.moveToFirst()) {
             record = cursorToRecord(cursor);
@@ -56,8 +59,8 @@ public class TaskRecordDAO {
     public List<TaskRecord> query(String whereClause, String[] whereArgs) {
         List list = null;
         SQLiteDatabase db = RecordManager.openDatabase();
-        Cursor cursor = db.rawQuery(TABLE_NAME,whereArgs);
-        if (cursor.getCount() > 0){
+        Cursor cursor = db.rawQuery(TABLE_NAME, whereArgs);
+        if (cursor.getCount() > 0) {
             list = new LinkedList();
             if (cursor.moveToFirst()) {
                 for (int i = 0; i < cursor.getCount(); i++) {
@@ -72,7 +75,7 @@ public class TaskRecordDAO {
         return list;
     }
 
-    private ContentValues contentValuesToRecord(TaskRecord record){
+    private ContentValues contentValuesToRecord(TaskRecord record) {
         ContentValues values = new ContentValues();
         values.put(SqlConst.TB_TASK_URL, record.getDownloadUrl());
         values.put(SqlConst.TB_TASK_DIR_PATH, record.getFilePath());
@@ -88,7 +91,7 @@ public class TaskRecordDAO {
         return values;
     }
 
-    private TaskRecord cursorToRecord(Cursor cursor){
+    private TaskRecord cursorToRecord(Cursor cursor) {
         TaskRecord record = new TaskRecord();
         record.setId(cursor.getLong(0));
         record.setDownloadUrl(cursor.getString(1));

@@ -3,6 +3,9 @@ package com.zsp.filedownloader.record;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.provider.BaseColumns;
+
+import com.zsp.filedownloader.Debug;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -16,6 +19,7 @@ public class SubTaskRecordDAO {
     static final String TABLE_NAME = SqlConst.TB_THREAD;
 
     public long add(SubTaskRecord record) {
+        Debug.log("添加子任务记录" + record);
         SQLiteDatabase db = RecordManager.openDatabase();
         ContentValues values = contentValuesToRecord(record);
         long id = db.insert(TABLE_NAME, null, values);
@@ -24,16 +28,18 @@ public class SubTaskRecordDAO {
     }
 
     public int update(SubTaskRecord record) {
+        Debug.log("更新子任务记录" + record);
         SQLiteDatabase db = RecordManager.openDatabase();
         ContentValues values = contentValuesToRecord(record);
-        String whereClause = "id=?";
+        String whereClause = BaseColumns._ID + "=?";
         String[] whereArgs = {String.valueOf(record.getId())};
         return db.update(TABLE_NAME, values, whereClause, whereArgs);
     }
 
     public int delete(long id,long pid) {
+        Debug.log("删除子任务记录 子id=" + id + "父id="+pid);
         SQLiteDatabase db = RecordManager.openDatabase();
-        String whereClause = "id=? and "+SqlConst.TB_TASK_ID+"=?";
+        String whereClause = BaseColumns._ID + "=? and "+SqlConst.TB_TASK_ID+"=?";
         String[] whereArgs = {
                 String.valueOf(id),
                 String.valueOf(pid)
