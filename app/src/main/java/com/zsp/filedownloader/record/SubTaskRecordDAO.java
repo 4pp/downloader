@@ -106,9 +106,10 @@ public class SubTaskRecordDAO {
     private SubTaskRecord cursorToRecord(Cursor cursor){
         SubTaskRecord record = new SubTaskRecord();
         record.setId(cursor.getLong(0));
-        record.setStart(cursor.getLong(1));
-        record.setEnd(cursor.getLong(2));
-        record.setFinshed(cursor.getLong(3));
+        record.setTaskID(cursor.getLong(1));
+        record.setStart(cursor.getLong(2));
+        record.setEnd(cursor.getLong(3));
+        record.setFinshed(cursor.getLong(4));
         return record;
     }
 }

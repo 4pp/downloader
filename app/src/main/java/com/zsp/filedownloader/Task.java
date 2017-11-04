@@ -1,21 +1,17 @@
 package com.zsp.filedownloader;
 
-import android.text.TextUtils;
 import android.util.Log;
 
 import com.zsp.filedownloader.record.SubTaskRecord;
 import com.zsp.filedownloader.record.TaskRecord;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -179,32 +175,32 @@ public class Task implements Runnable {
                 if (record.isFinished()) {
                     Debug.log("下载完成 " + record.getFinishedLength() + "/" + contentLength);
                     downLoader.onTaskFinished(this);
-                    downLoader.dispatcher().finished(this);
+                    downLoader.dispatcher().removeRunningQueue(this);
                     downLoader.recordManager.task().update(record);
                     downLoader.recordManager.subTask().deleteByTaskId(record.getId());
                 } else if (getState() == Const.DOWNLOAD_STATE_STOP) {
                     Debug.log("下载停止 " + record.getFinishedLength() + "/" + contentLength);
                     downLoader.onTaskStop(this);
-                    downLoader.dispatcher().stoped(this);
+                    downLoader.dispatcher().moveStopQueue(this);
                     downLoader.recordManager.task().update(record);
                 } else if (getState() == Const.DOWNLOAD_STATE_CANCEL) {
                     Debug.log("下载取消 " + record.getFinishedLength() + "/" + contentLength);
                     downLoader.onCancelTask(this);
-                    downLoader.dispatcher().finished(this);
+                    downLoader.dispatcher().removeRunningQueue(this);
                     downLoader.recordManager.task().delete(record.getId());
                     downLoader.recordManager.subTask().deleteByTaskId(record.getId());
                 }
             } else {
                 Debug.log("下载失败 " + record.getFinishedLength());
                 downLoader.onTaskError(this, "响应码:" + code);
-                downLoader.dispatcher().stoped(this);
+                downLoader.dispatcher().moveStopQueue(this);
                 downLoader.recordManager.task().update(record);
             }
 
         } catch (Exception e) {
             e.printStackTrace();
             downLoader.onTaskError(this, e.toString());
-            downLoader.dispatcher().stoped(this);
+            downLoader.dispatcher().moveStopQueue(this);
             downLoader.recordManager.task().update(record);
         } finally {
             closeIO();

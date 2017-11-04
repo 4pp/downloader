@@ -31,7 +31,7 @@ public class SubTask implements Callable {
         this.record = record;
         id = record.getId();
         downloadUrl = pTask.getDownloadUrl();
-        savePath = pTask.getFilePath()+pTask.getFileName();
+        savePath = pTask.getFilePath() + pTask.getFileName();
     }
 
 //    public void stop() {
@@ -71,20 +71,20 @@ public class SubTask implements Callable {
         try {
             URL url = new URL(downloadUrl);
             conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("Range", "bytes=" + record.getStart() + "-" + (record.getEnd() - 1));
+            conn.setRequestProperty("Range", "bytes=" + (record.getStart() + record.getFinshed()) + "-" + (record.getEnd() - 1));
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Charset", "UTF-8");
             conn.setReadTimeout(30 * 1000);
             inputStream = conn.getInputStream();
             file = new RandomAccessFile(savePath, "rwd");
-            file.seek(record.getStart()); // 指定开始写文件的位置
+            file.seek(record.getStart() + record.getFinshed()); // 指定开始写文件的位置
             byte[] buffer = new byte[4096];
             int len;
             while (pTask.getState() == Const.DOWNLOAD_STATE_DOWNLOADING && (len = inputStream.read(buffer)) != -1) {
                 file.write(buffer, 0, len);
                 long finished = record.getFinshed() + len;
                 record.setFinshed(finished);
-                pTask.appendFinished(len,this);
+                pTask.appendFinished(len, this);
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -8,11 +8,9 @@ import android.text.TextUtils;
 import com.zsp.filedownloader.record.RecordManager;
 import com.zsp.filedownloader.record.TaskRecord;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -101,8 +99,18 @@ public class DownLoader {
     }
 
     public void cancel(long id){
-        Task task = dispatcher.cancel(id);
+        Task task = dispatcher.cancelTask(id);
         onCancelTask(task);
+    }
+
+    public void stop(long id){
+        Task task = dispatcher.stopTask(id);
+        onTaskStop(task);
+    }
+
+    public void restart(long id){
+        Task task = dispatcher.restartTask(id);
+        onTaskStop(task);
     }
 
     public List<Task> getTasks(){
@@ -116,9 +124,9 @@ public class DownLoader {
         return list;
     }
 
-    public void cancelAll(){
-        dispatcher.cancelAll();
-    }
+//    public void cancelAll(){
+//        dispatcher.cancelAll();
+//    }
 
     public void onAddTask(final Task task){
         handler.post(new Runnable() {

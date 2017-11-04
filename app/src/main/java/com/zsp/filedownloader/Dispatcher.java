@@ -1,15 +1,8 @@
 package com.zsp.filedownloader;
 
-import android.util.Log;
-
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -32,7 +25,7 @@ public class Dispatcher {
         maxTasks = this.downLoader.getConfig().getMaxTasks();
     }
 
-    private final BlockingQueue<Task> pauseTasks = new LinkedBlockingDeque();
+    private final BlockingQueue<Task> stopTasks = new LinkedBlockingDeque();
 
     private final BlockingQueue<Task> readyTasks = new LinkedBlockingDeque();
 
@@ -60,29 +53,16 @@ public class Dispatcher {
     }
 
 
-    synchronized void finished(Task task) {
+    synchronized void removeRunningQueue(Task task) {
         if (!runningTasks.remove(task)) throw new AssertionError("Task wasn't running!");
         allTasks.remove(task.getId());
         promoteCalls();
     }
 
-    synchronized void stoped(Task task){
+    synchronized void moveStopQueue(Task task){
         if (!runningTasks.remove(task)) throw new AssertionError("Task wasn't running!");
-        pauseTasks.add(task);
+        stopTasks.add(task);
         promoteCalls();
-    }
-
-    synchronized void restart(long id){
-        Task task = allTasks.get(id);
-        if (!pauseTasks.remove(task)) throw new AssertionError("Task wasn't running!");
-
-        if (runningTasks.size() < maxTasks) {
-            runningTasks.add(task);
-            executorService().execute(task);
-        } else {
-            task.setState(Const.DOWNLOAD_STATE_WAIT);
-            readyTasks.add(task);
-        }
     }
 
     private void promoteCalls() {
@@ -100,7 +80,22 @@ public class Dispatcher {
         }
     }
 
-    public synchronized Task cancel(long id) {
+    synchronized Task restartTask(long id){
+        Task task = allTasks.get(id);
+        if (!stopTasks.remove(task)) throw new AssertionError("Task wasn't running!");
+
+        if (runningTasks.size() < maxTasks) {
+            runningTasks.add(task);
+            executorService().execute(task);
+        } else {
+            task.setState(Const.DOWNLOAD_STATE_WAIT);
+            readyTasks.add(task);
+        }
+        return task;
+    }
+
+
+    public synchronized Task cancelTask(long id) {
         Task task = allTasks.get(id);
         if (task == null){
             return null;
@@ -118,7 +113,7 @@ public class Dispatcher {
         return task;
     }
 
-    public synchronized Task stop(long id) {
+    public synchronized Task stopTask(long id) {
         Task task = allTasks.get(id);
         if (task == null){
             return null;
@@ -131,18 +126,18 @@ public class Dispatcher {
         return task;
     }
 
-    public synchronized void cancelAll() {
-
-        for (Task task : readyTasks) {
-            task.cancel();
-            readyTasks.remove(task);
-            allTasks.remove(task.getId());
-        }
-
-        for (Task call : runningTasks) {
-            call.cancel();
-        }
-    }
+//    public synchronized void cancelAll() {
+//
+//        for (Task task : readyTasks) {
+//            task.cancel();
+//            readyTasks.remove(task);
+//            allTasks.remove(task.getId());
+//        }
+//
+//        for (Task call : runningTasks) {
+//            call.cancel();
+//        }
+//    }
 
     public List<Task> getTasks() {
         List<Task> list = new LinkedList<>();

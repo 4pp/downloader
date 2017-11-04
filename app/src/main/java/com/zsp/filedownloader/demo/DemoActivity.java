@@ -27,7 +27,8 @@ public class DemoActivity extends AppCompatActivity implements DownLoadListener{
         findViewById(R.id.btn_add).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                DownLoader.getInstance().add("http://res9.d.cn/android/yxzx.apk",System.currentTimeMillis()+"-yxzx");
+               // DownLoader.getInstance().add("http://res9.d.cn/android/yxzx.apk",System.currentTimeMillis()+"-yxzx");
+                DownLoader.getInstance().add("http://192.168.3.6:8080/pdf.zip");
             }
         });
 
@@ -45,6 +46,20 @@ public class DemoActivity extends AppCompatActivity implements DownLoadListener{
                 Log.d(TAG, "onClick: 删除:"+position);
                 Task task = (Task) adapter.getItem(position);
                 DownLoader.getInstance().cancel(task.getId());
+            }
+
+            @Override
+            public void onStop(View view, int position) {
+                Log.d(TAG, "onClick: 停止:"+position);
+                Task task = (Task) adapter.getItem(position);
+                DownLoader.getInstance().stop(task.getId());
+            }
+
+            @Override
+            public void onRestart(View view, int position) {
+                Log.d(TAG, "onClick: 重启:"+position);
+                Task task = (Task) adapter.getItem(position);
+                DownLoader.getInstance().restart(task.getId());
             }
         });
 

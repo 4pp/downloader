@@ -75,6 +75,8 @@ public class DownLoadAdapter extends BaseAdapter {
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder holder;
         CancelClick cancelClick;
+        StopClick stopClick;
+        ReStartClick restartClick;
 
         if (convertView == null) {
             LayoutInflater mInflater = LayoutInflater.from(ctx);
@@ -88,19 +90,41 @@ public class DownLoadAdapter extends BaseAdapter {
             holder.btnCancel = (Button) convertView.findViewById(R.id.btn_cancel);
             cancelClick = new CancelClick();
             holder.btnCancel.setOnClickListener(cancelClick);
+            holder.btnCancel.setOnTouchListener(new ItemTouch());
             convertView.setTag(holder.btnCancel.getId(),cancelClick);
 
-            convertView.setTag(holder);
 
-            holder.btnCancel.setOnTouchListener(new ItemTouch());
+            holder.btnStop = (Button)convertView.findViewById(R.id.btn_stop);
+            stopClick = new StopClick();
+            holder.btnStop.setOnClickListener(stopClick);
+            holder.btnStop.setOnClickListener(stopClick);
+            holder.btnStop.setOnTouchListener(new ItemTouch());
+            convertView.setTag(holder.btnStop.getId(),stopClick);
+
+            holder.btnReStart = (Button)convertView.findViewById(R.id.btn_restart);
+            restartClick = new ReStartClick();
+            holder.btnReStart.setOnClickListener(restartClick);
+            holder.btnReStart.setOnClickListener(restartClick);
+            holder.btnReStart.setOnTouchListener(new ItemTouch());
+            convertView.setTag(holder.btnReStart.getId(),restartClick);
+
+            convertView.setTag(holder);
 
         } else {
             holder = (ViewHolder) convertView.getTag();
             cancelClick = (CancelClick) convertView.getTag(holder.btnCancel.getId());
+            stopClick = (StopClick) convertView.getTag(holder.btnStop.getId());
+            restartClick = (ReStartClick)convertView.getTag(holder.btnReStart.getId());
         }
 
         cancelClick.setPosition(position);
         cancelClick.setListener(listener);
+
+        stopClick.setPosition(position);
+        stopClick.setListener(listener);
+
+        restartClick.setPosition(position);
+        restartClick.setListener(listener);
 
 
         Task task = dataSource.get(position);
@@ -134,6 +158,8 @@ public class DownLoadAdapter extends BaseAdapter {
         TextView name;
         TextView state;
         Button btnCancel;
+        Button btnStop;
+        Button btnReStart;
     }
 
     public class ItemTouch implements View.OnTouchListener{
@@ -192,7 +218,27 @@ public class DownLoadAdapter extends BaseAdapter {
         }
     }
 
+    public static class StopClick extends BaseItemClick{
+        @Override
+        public void onClick(View v) {
+            if (listener!=null){
+                listener.onStop(v,position);
+            }
+        }
+    }
+
+    public static class ReStartClick extends BaseItemClick{
+        @Override
+        public void onClick(View v) {
+            if (listener!=null){
+                listener.onRestart(v,position);
+            }
+        }
+    }
+
     interface Listener {
         void onCancel(View view, int position);
+        void onStop(View view,int position);
+        void onRestart(View view,int position);
     }
 }

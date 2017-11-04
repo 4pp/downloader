@@ -6,11 +6,11 @@ package com.zsp.filedownloader.record;
 
 public class SubTaskRecord {
 
-    public long id;
-    public long taskID;
-    public long start;
-    public long end;
-    public long finshed;
+    private long id;
+    private long taskID;
+    private long start;
+    private long end;
+    private long finshed;
 
     public long getId() {
         return id;
