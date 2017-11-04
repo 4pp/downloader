@@ -144,6 +144,7 @@ public class TaskRecord {
     @Override
     public String toString() {
         StringBuffer sb = new StringBuffer();
+        sb.append("\r\n");
         sb.append(">>>====================================");
         sb.append("\r\n");
         sb.append("id:"+id);
@@ -164,7 +165,7 @@ public class TaskRecord {
         sb.append("\r\n");
         sb.append("finishedLength:"+finishedLength);
         sb.append("\r\n");
-        sb.append("createAt:"+createAt);
+        sb.append("state:"+state);
         sb.append("\r\n");
         sb.append("createAt:"+createAt);
         sb.append("\r\n");

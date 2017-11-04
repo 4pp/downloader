@@ -267,7 +267,7 @@ public class Task implements Runnable {
 
     public void cancel() {
         if (state == Const.DOWNLOAD_STATE_DOWNLOADING) {
-            state = Const.DOWNLOAD_STATE_CONNECT;
+            state = Const.DOWNLOAD_STATE_CANCEL;
             closeIO();
         }
         File file = new File(record.getFilePath()+record+getFileName());
