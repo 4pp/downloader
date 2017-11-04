@@ -38,6 +38,7 @@ public class Config {
         maxThreads = builder.maxThreads;
         updateInterval = builder.updateInterval;
         singleTaskThreshold = builder.singleTaskThreshold;
+        Debug.enable = builder.debug;
 
     }
 
@@ -53,6 +54,7 @@ public class Config {
         private int updateInterval = 50;
         //启用任务内多线程下载的数据量的临界值,单位KB
         private int singleTaskThreshold = 100;
+        private boolean debug = true;
 
 
         public Builder setSaveDir(String path) {
@@ -80,10 +82,16 @@ public class Config {
             return this;
         }
 
+        public Builder debug(boolean enable){
+            debug = enable;
+            return this;
+        }
+
         public Config build() {
             Config config = new Config(this);
             return config;
         }
+
     }
 
 }

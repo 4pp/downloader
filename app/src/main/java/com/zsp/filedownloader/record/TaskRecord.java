@@ -18,7 +18,7 @@ public class TaskRecord {
     private long contentLength;
     private long finishedLength;
     private int state;
-    private String createAt;
+    private long createAt;
     private int[] tasks;
 
     public long getId() {
@@ -101,11 +101,11 @@ public class TaskRecord {
         this.state = state;
     }
 
-    public String getCreateAt() {
+    public long getCreateAt() {
         return createAt;
     }
 
-    public void setCreateAt(String createAt) {
+    public void setCreateAt(long createAt) {
         this.createAt = createAt;
     }
 
@@ -141,4 +141,56 @@ public class TaskRecord {
         }
     }
 
+    @Override
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append(">>>====================================");
+        sb.append("\r\n");
+        sb.append("id:"+id);
+        sb.append("\r\n");
+        sb.append("downloadUrl:"+downloadUrl);
+        sb.append("\r\n");
+        sb.append("filePath:"+filePath);
+        sb.append("\r\n");
+        sb.append("fileName:"+fileName);
+        sb.append("\r\n");
+        sb.append("mimeType:"+mimeType);
+        sb.append("\r\n");
+        sb.append("eTag:"+eTag);
+        sb.append("\r\n");
+        sb.append("disposition:"+disposition);
+        sb.append("\r\n");
+        sb.append("contentLength:"+contentLength);
+        sb.append("\r\n");
+        sb.append("finishedLength:"+finishedLength);
+        sb.append("\r\n");
+        sb.append("createAt:"+createAt);
+        sb.append("\r\n");
+        sb.append("createAt:"+createAt);
+        sb.append("\r\n");
+        sb.append("tasks:"+getTasksToString());
+        sb.append("\r\n");
+        sb.append("<<<====================================");
+        sb.append("\r\n");
+        return sb.toString();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        TaskRecord other = (TaskRecord) obj;
+        if (id != other.getId()) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return (int)(id ^ (id >>> 32));
+    }
+
+    public boolean isFinished(){
+        return finishedLength == contentLength;
+    }
 }

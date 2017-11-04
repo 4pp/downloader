@@ -3,6 +3,9 @@ package com.zsp.filedownloader.record;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
+
+import com.zsp.filedownloader.Debug;
 
 /**
  * Created by zsp on 2017/11/2.
@@ -19,12 +22,14 @@ public class DBHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
+        Debug.log("创建数据库");
         db.execSQL(SqlConst.TB_TASK_SQL_CREATE);
         db.execSQL(SqlConst.TB_THREAD_SQL_CREATE);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        Debug.log("更新数据库");
         db.execSQL(SqlConst.TB_TASK_SQL_UPGRADE);
         db.execSQL(SqlConst.TB_THREAD_SQL_UPGRADE);
         onCreate(db);

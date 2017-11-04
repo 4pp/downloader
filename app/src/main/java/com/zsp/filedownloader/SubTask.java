@@ -1,5 +1,7 @@
 package com.zsp.filedownloader;
 
+import com.zsp.filedownloader.record.SubTaskRecord;
+
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
@@ -12,30 +14,24 @@ import java.util.concurrent.Callable;
  */
 
 public class SubTask implements Callable {
-    private static final String TAG = "SubTask";
 
     public Task pTask;
-    public String id;
+    public SubTaskRecord record;
+
+    public long id;
     public String downloadUrl;
     public String savePath;
-    public long startPosition;
-    public long endPosition;
-    public long finishedLength;
-    public long blockSize;
 
     InputStream inputStream;
     RandomAccessFile file;
     HttpURLConnection conn;
 
-    public SubTask(Task downLoadTask, long start, long end) {
+    public SubTask(Task downLoadTask, SubTaskRecord record) {
         pTask = downLoadTask;
-        id = "SubTask-" + pTask.getSubTaskCount();
+        this.record = record;
+        id = record.getId();
         downloadUrl = pTask.getDownloadUrl();
-        savePath = pTask.getSavePath();
-        startPosition = start;
-        endPosition = end;
-        blockSize = end - start;
-
+        savePath = pTask.getFilePath()+pTask.getFileName();
     }
 
 //    public void stop() {
@@ -75,19 +71,19 @@ public class SubTask implements Callable {
         try {
             URL url = new URL(downloadUrl);
             conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("Range", "bytes=" + startPosition + "-" + (endPosition - 1));
+            conn.setRequestProperty("Range", "bytes=" + record.getStart() + "-" + (record.getEnd() - 1));
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Charset", "UTF-8");
             conn.setReadTimeout(30 * 1000);
             inputStream = conn.getInputStream();
             file = new RandomAccessFile(savePath, "rwd");
-            file.seek(startPosition); // 指定开始写文件的位置
+            file.seek(record.getStart()); // 指定开始写文件的位置
             byte[] buffer = new byte[4096];
             int len;
             while (pTask.getState() == Const.DOWNLOAD_STATE_DOWNLOADING && (len = inputStream.read(buffer)) != -1) {
                 file.write(buffer, 0, len);
-                finishedLength += len;
-                pTask.appendFinished(len);
+                long finished = record.getFinshed() + len;
+                pTask.appendFinished(len,record.getId(),finished);
             }
         } catch (Exception e) {
             e.printStackTrace();

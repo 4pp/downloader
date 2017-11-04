@@ -4,6 +4,8 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
+import com.zsp.filedownloader.Debug;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -16,9 +18,12 @@ public class TaskRecordDAO {
     public static final String TABLE_NAME = SqlConst.TB_TASK;
 
     public long add(TaskRecord record) {
+        Debug.log("添加记录\r\n"+record);
         SQLiteDatabase db = RecordManager.openDatabase();
         ContentValues values = contentValuesToRecord(record);
-        return db.insert(TABLE_NAME, null, values);
+        long id = db.insert(TABLE_NAME, null, values);
+        record.setId(id);
+        return id;
     }
 
 
@@ -95,7 +100,7 @@ public class TaskRecordDAO {
         record.setMimeType(cursor.getString(7));
         record.seteTag(cursor.getString(8));
         record.setTasksToArray(cursor.getString(9));
-        record.setCreateAt(cursor.getString(10));
+        record.setCreateAt(cursor.getLong(10));
         record.setDisposition(cursor.getString(11));
         return record;
     }

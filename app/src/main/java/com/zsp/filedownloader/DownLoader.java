@@ -3,12 +3,16 @@ package com.zsp.filedownloader;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.TextUtils;
 
 import com.zsp.filedownloader.record.RecordManager;
+import com.zsp.filedownloader.record.TaskRecord;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -62,6 +66,7 @@ public class DownLoader {
     }
 
     public static void init(Context context,Config config) {
+        Debug.log("初始化 DownLoader");
         defConfig = config;
         RecordManager.initialize(context);
     }
@@ -78,20 +83,41 @@ public class DownLoader {
         return dispatcher;
     }
 
-    public String add(String url){
+    public long add(String url){
        return add(url,null);
     }
 
-    public String add(String url,String fileName){
-        Task task = new Task(this,url,fileName);
+    public long add(String url,String fileName){
+        TaskRecord record = new TaskRecord();
+        record.setCreateAt(System.currentTimeMillis());
+        record.setDownloadUrl(url);
+
+        recordManager.task().add(record);
+
+
+        if (TextUtils.isEmpty(fileName)) {
+            fileName = url.substring(url.lastIndexOf("/"));
+            if (TextUtils.isEmpty(fileName)) {
+                fileName = "download-" + System.currentTimeMillis();
+            }
+        } else {
+            String suffix = url.substring(url.lastIndexOf("."));
+            if (!TextUtils.isEmpty(suffix)) {
+                fileName = fileName + suffix;
+            }
+        }
+
+        record.setFilePath(getConfig().getSaveDir());
+        record.setFileName(fileName);
+
+        Task task = new Task(this,record);
         dispatcher.enqueue(task);
         onAddTask(task);
-        return task.getId();
+        return record.getId();
     }
 
-    public void cancel(String id){
+    public void cancel(long id){
         Task task = dispatcher.cancel(id);
-        task.setState(Const.DOWNLOAD_STATE_CANCEL);
         onCancelTask(task);
     }
 

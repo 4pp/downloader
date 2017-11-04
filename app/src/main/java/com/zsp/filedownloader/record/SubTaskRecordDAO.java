@@ -18,7 +18,9 @@ public class SubTaskRecordDAO {
     public long add(SubTaskRecord record) {
         SQLiteDatabase db = RecordManager.openDatabase();
         ContentValues values = contentValuesToRecord(record);
-        return db.insert(TABLE_NAME, null, values);
+        long id = db.insert(TABLE_NAME, null, values);
+        record.setId(id);
+        return id;
     }
 
     public int update(SubTaskRecord record) {

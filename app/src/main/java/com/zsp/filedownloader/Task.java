@@ -3,6 +3,9 @@ package com.zsp.filedownloader;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.zsp.filedownloader.record.SubTaskRecord;
+import com.zsp.filedownloader.record.TaskRecord;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,51 +32,45 @@ public class Task implements Runnable {
     private long delayTime;
     private int sortLevel;
 
-    DownLoader downLoader;
-    private String id;
-    private String downloadUrl;
-    private String fileName;
-    private long contentLength;
-    private long finishedLength;
+    private TaskRecord record;
+    private DownLoader downLoader;
 
-    public String getId() {
-        return id;
+    public long getId() {
+        return record.getId();
     }
 
-    public String getSavePath() {
-        return savePath;
+    public String getFilePath() {
+        return record.getFilePath();
     }
 
     public String getDownloadUrl() {
-        return downloadUrl;
+        return record.getDownloadUrl();
     }
 
     public String getFileName() {
-        return fileName;
+        return record.getFileName();
     }
 
     public long getContentLength() {
-        return contentLength;
+        return record.getContentLength();
     }
-
+//
     public long getFinishedLength() {
-        return finishedLength;
+        return record.getFinishedLength();
     }
-
+//
     public int getSortLevel() {
         return sortLevel;
     }
-
+//
     public long getCreateAt() {
-        return createAt;
+        return record.getCreateAt();
     }
-
+//
     public int getSubTaskCount() {
         return subTaskArray == null ? 0 : subTaskArray.size();
     }
 
-    private long createAt;
-    private String savePath;
     private ExecutorService executorService;
     private ArrayList<SubTask> subTaskArray;
     private CountDownLatch countDownLatch;
@@ -98,50 +95,28 @@ public class Task implements Runnable {
         return state;
     }
 
-    public Task(DownLoader downLoader, String url) {
-        this(downLoader, url, null);
-    }
 
-    public Task(DownLoader downLoader, String url, String saveFileName) {
+    public Task(DownLoader downLoader, TaskRecord record) {
         this.downLoader = downLoader;
         this.maxThreads = downLoader.getConfig().getMaxThreads();
-        id = System.currentTimeMillis() + "|" + url;
-        createAt = System.currentTimeMillis();
-        downloadUrl = url;
-
-        if (TextUtils.isEmpty(saveFileName)) {
-            fileName = downloadUrl.substring(downloadUrl.lastIndexOf("/"));
-            if (TextUtils.isEmpty(fileName)) {
-                fileName = "download-" + System.currentTimeMillis();
-            }
-        } else {
-            String suffix = downloadUrl.substring(downloadUrl.lastIndexOf("."));
-            if (TextUtils.isEmpty(suffix)) {
-                fileName = saveFileName;
-            } else {
-                fileName = saveFileName + suffix;
-            }
-        }
-
-        savePath = downLoader.getConfig().getSaveDir() + fileName;
-
-
+        this.record = record;
     }
 
     @Override
     public void run() {
-
         try {
             downLoader.onTaskConnect(this);
-            URL url = new URL(downloadUrl);
+            URL url = new URL(record.getDownloadUrl());
             conn = (HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(5 * 1000);
             conn.setRequestMethod("GET");
             int code = conn.getResponseCode();
             if (code == 200) {
                 downLoader.onTaskStart(this);
-                contentLength = conn.getContentLength();
+                int contentLength = conn.getContentLength();
+                record.setContentLength(contentLength);
                 try {
+                    String savePath = record.getFilePath() + record.getFileName();
                     file = new RandomAccessFile(savePath, "rwd");
                     file.setLength(contentLength);
                 } catch (Exception e) {
@@ -157,26 +132,26 @@ public class Task implements Runnable {
                     singleTaskDownloading();
                 }
 
-                if (contentLength == finishedLength){
-                    Log.d(TAG, "下载完成" + finishedLength + "/" + contentLength);
+                if (record.isFinished()) {
+                    Log.d(TAG, "下载完成" + record.getFinishedLength() + "/" + contentLength);
                     downLoader.onTaskFinished(this);
-                }else{
-                    Log.d(TAG, "下载停止" + finishedLength + "/" + contentLength);
+                    downLoader.dispatcher().finished(this);
+                } else if (state == Const.DOWNLOAD_STATE_STOP){
+                    Log.d(TAG, "下载停止" + record.getFinishedLength() + "/" + contentLength);
                     downLoader.onTaskStop(this);
                     downLoader.dispatcher().stoped(this);
-                }
-
-                //取消和完成
-                if (state != Const.DOWNLOAD_STATE_STOP){
+                }else if(state == Const.DOWNLOAD_STATE_CANCEL){
+                    Log.d(TAG, "下载取消" + record.getFinishedLength() + "/" + contentLength);
+                    downLoader.onCancelTask(this);
                     downLoader.dispatcher().finished(this);
                 }
             } else {
-                downLoader.onTaskError(this,"响应码:"+code);
+                downLoader.onTaskError(this, "响应码:" + code);
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            downLoader.onTaskError(this,e.toString());
+            downLoader.onTaskError(this, e.toString());
         } finally {
             closeIO();
         }
@@ -187,23 +162,29 @@ public class Task implements Runnable {
         subTaskArray = new ArrayList(maxThreads);
         countDownLatch = new CountDownLatch(maxThreads);
 
-        int blockSize = (int) (contentLength / maxThreads);
+        int blockSize = (int) (record.getContentLength() / maxThreads);
         List<Future<Boolean>> list = new ArrayList<>(maxThreads);
         for (int i = 0; i < maxThreads; i++) {
             long start = i * blockSize;
             long end = (i + 1) * blockSize;
             if (i == maxThreads - 1) {
                 // subTask.endLocation  +=  (length % blockSize);
-                end = contentLength;
+                end = record.getContentLength();
             }
-            SubTask subTask = new SubTask(this, start, end);
+
+            SubTaskRecord subRecord = new SubTaskRecord();
+            downLoader.recordManager.subTask().add(subRecord);
+            subRecord.setTaskID(record.getId());
+            subRecord.setStart(start);
+            subRecord.setEnd(end);
+            SubTask subTask = new SubTask(this,subRecord);
             subTaskArray.add(subTask);
             Log.d(TAG, "run: 启动子线程" + i);
             Future<Boolean> future = executorService.submit(subTask);
             list.add(future);
         }
 
-        try{
+        try {
             countDownLatch.await();
             for (int i = 0; i < list.size(); i++) {
                 Future<Boolean> future = list.get(i);
@@ -211,7 +192,7 @@ public class Task implements Runnable {
                     throw new Exception("子线程执行失败");
                 }
             }
-        }catch (ExecutionException e){
+        } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -224,13 +205,15 @@ public class Task implements Runnable {
         int len = 0;
         while (state == Const.DOWNLOAD_STATE_DOWNLOADING && (len = inputStream.read(buf)) != -1) {
             file.write(buf, 0, len);
-            finishedLength += len;
+            long finished = record.getFinishedLength() + len;
+            record.setFinishedLength(finished);
             updateProcess();
         }
     }
 
-    public synchronized void appendFinished(long len) {
-        finishedLength += len;
+    public synchronized void appendFinished(long len,long subTaskId,long subFinished) {
+        long finished = record.getFinishedLength() + len;
+        record.setFinishedLength(finished);
         updateProcess();
     }
 
@@ -239,7 +222,7 @@ public class Task implements Runnable {
         long interval = curTime - lastTime;
         delayTime += interval;
         if (delayTime > downLoader.getConfig().getUpdateInterval()
-                || finishedLength == contentLength) {
+                || record.isFinished()) {
             downLoader.onTaskProcess(this);
             delayTime = 0;
         }
@@ -283,12 +266,15 @@ public class Task implements Runnable {
     }
 
     public void cancel() {
-        stop();
-        File file = new File(savePath);
+        if (state == Const.DOWNLOAD_STATE_DOWNLOADING) {
+            state = Const.DOWNLOAD_STATE_CONNECT;
+            closeIO();
+        }
+        File file = new File(record.getFilePath()+record+getFileName());
         if (file.exists()) {
             file.delete();
         }
-        Log.d(TAG, "cancel: 取消了任务:" + savePath);
+        Log.d(TAG, "cancel: 取消了任务:" + file.getAbsolutePath());
     }
 
     @Override
@@ -297,13 +283,14 @@ public class Task implements Runnable {
         if (obj == null) return false;
         if (getClass() != obj.getClass()) return false;
         Task other = (Task) obj;
-        if (!id.equals(other.id)) return false;
+        if (record.getId() != other.record.getId()) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return id.hashCode();
+        long id = record.getId();
+        return (int) (id ^ (id >>> 32));
     }
 
     public void subTaskFinished() {

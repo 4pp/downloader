@@ -38,7 +38,7 @@ public class SqlConst {
             SqlConst.TB_TASK_MIME_TYPE + " CHAR, " +
             SqlConst.TB_TASK_ETAG + " CHAR, " +
             SqlConst.TB_SUB + " CHAR, " +
-            SqlConst.TB_CREATE_AT + " CHAR, " +
+            SqlConst.TB_CREATE_AT + " INTEGER, " +
             SqlConst.TB_TASK_DISPOSITION + " CHAR)";
 
     static final String TB_THREAD_SQL_CREATE = "CREATE TABLE " +

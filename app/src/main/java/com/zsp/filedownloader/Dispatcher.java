@@ -1,5 +1,7 @@
 package com.zsp.filedownloader;
 
+import android.util.Log;
+
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
@@ -7,8 +9,13 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * Created by zsp on 2017/10/31.
@@ -25,13 +32,13 @@ public class Dispatcher {
         maxTasks = this.downLoader.getConfig().getMaxTasks();
     }
 
-    private final Deque<Task> pauseTasks = new ArrayDeque<>();
+    private final BlockingQueue<Task> pauseTasks = new LinkedBlockingDeque();
 
-    private final Deque<Task> readyTasks = new ArrayDeque<>();
+    private final BlockingQueue<Task> readyTasks = new LinkedBlockingDeque();
 
-    private final Deque<Task> runningTasks = new ArrayDeque<>();
+    private final BlockingQueue<Task> runningTasks = new LinkedBlockingDeque();
 
-    private final Map<String, Task> allTasks = new HashMap<>();
+    private final ConcurrentMap<Long, Task> allTasks = new ConcurrentHashMap<>();
 
     private ExecutorService executorService;
 
@@ -65,7 +72,7 @@ public class Dispatcher {
         promoteCalls();
     }
 
-    synchronized void restart(String id){
+    synchronized void restart(long id){
         Task task = allTasks.get(id);
         if (!pauseTasks.remove(task)) throw new AssertionError("Task wasn't running!");
 
@@ -93,7 +100,7 @@ public class Dispatcher {
         }
     }
 
-    public synchronized Task cancel(String id) {
+    public synchronized Task cancel(long id) {
         Task task = allTasks.get(id);
         if (task == null){
             return null;
@@ -111,7 +118,7 @@ public class Dispatcher {
         return task;
     }
 
-    public synchronized Task stop(String id) {
+    public synchronized Task stop(long id) {
         Task task = allTasks.get(id);
         if (task == null){
             return null;
@@ -139,7 +146,7 @@ public class Dispatcher {
 
     public List<Task> getTasks() {
         List<Task> list = new LinkedList<>();
-        for (String key : allTasks.keySet()) {
+        for (Long key : allTasks.keySet()) {
             Task task = allTasks.get(key);
             list.add(task);
         }

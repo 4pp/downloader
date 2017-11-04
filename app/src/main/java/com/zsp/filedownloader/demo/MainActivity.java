@@ -25,12 +25,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        String path = DownLoader.getInstance().getConfig().getSaveDir();
-        File file = new File(path);
-        if (!file.exists()){
-            ActivityCompat.requestPermissions(MainActivity.this, new String[]{android
-                    .Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
-        }
+        ActivityCompat.requestPermissions(MainActivity.this, new String[]{android
+                .Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
 
         findViewById(R.id.btn_go).setOnClickListener(new View.OnClickListener() {
             @Override
