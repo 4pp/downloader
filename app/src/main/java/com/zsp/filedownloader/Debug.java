@@ -8,7 +8,7 @@ import android.util.Log;
 
 public class Debug
 {
-    private static final String TAG = "DL";
+    private static final String TAG = "DownLoader";
 
     public static boolean enable = true;
 

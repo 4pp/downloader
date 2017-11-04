@@ -194,4 +194,8 @@ public class TaskRecord {
     public boolean isFinished(){
         return finishedLength == contentLength;
     }
+
+    public boolean isNew(){
+       return getContentLength() == 0 && getFinishedLength() == 0;
+    }
 }

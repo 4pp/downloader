@@ -83,7 +83,8 @@ public class SubTask implements Callable {
             while (pTask.getState() == Const.DOWNLOAD_STATE_DOWNLOADING && (len = inputStream.read(buffer)) != -1) {
                 file.write(buffer, 0, len);
                 long finished = record.getFinshed() + len;
-                pTask.appendFinished(len,record.getId(),finished);
+                record.setFinshed(finished);
+                pTask.appendFinished(len,this);
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -54,33 +54,28 @@ public class Task implements Runnable {
     public long getContentLength() {
         return record.getContentLength();
     }
+
     //
     public long getFinishedLength() {
         return record.getFinishedLength();
     }
+
     //
     public int getSortLevel() {
         return sortLevel;
     }
+
     //
     public long getCreateAt() {
         return record.getCreateAt();
     }
-    //
-//    public int getSubTaskCount() {
-//        return subTaskArray == null ? 0 : subTaskArray.size();
-//    }
 
-//    private ExecutorService executorService;
-    //private ArrayList<SubTask> subTaskArray;
     private CountDownLatch countDownLatch;
-
     private int maxThreads;
-    private InputStream inputStream;
     private RandomAccessFile file;
     private HttpURLConnection conn;
 
-    private int state = Const.DOWNLOAD_STATE_WAIT;
+    //private int state = Const.DOWNLOAD_STATE_WAIT;
 
     public void setState(int state) {
         if (state == Const.DOWNLOAD_STATE_DOWNLOADING) {
@@ -88,11 +83,11 @@ public class Task implements Runnable {
         } else {
             sortLevel = 0;
         }
-        this.state = state;
+        record.setState(state);
     }
 
     public int getState() {
-        return state;
+        return record.getState();
     }
 
 
@@ -113,8 +108,8 @@ public class Task implements Runnable {
             int code = conn.getResponseCode();
             if (code == 200) {
                 long contentLength = conn.getContentLength();
-                //没下载过
-                if (record.getContentLength() == 0 && record.getFinishedLength() == 0){
+                //新任务
+                if (record.isNew()) {
                     record.setContentLength(contentLength);
                     try {
                         String savePath = record.getFilePath() + record.getFileName();
@@ -123,12 +118,11 @@ public class Task implements Runnable {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                    downLoader.recordManager.task().update(record);
                 }
-
                 downLoader.onTaskStart(this);
+                downLoader.recordManager.task().update(record);
                 long size = contentLength / 1024;
-                Log.d(TAG, "下载内容 contentLength:" + size + "kb" + " len:" + contentLength);
+                Debug.log("下载内容 contentLength:" + size + "kb" + " len:" + contentLength);
 
 //                if (size > downLoader.getConfig().getSingleTaskThreshold()) {
 //                    multipleTaskDownloading();
@@ -136,30 +130,38 @@ public class Task implements Runnable {
 //                    singleTaskDownloading();
 //                }
 
+                ExecutorService executorService = Executors.newCachedThreadPool();
+                List<SubTaskRecord> recordList = downLoader.getRecordManager().subTask().queryByTaskId(record.getId());
                 int threadCount = maxThreads;
-                if (size < downLoader.getConfig().getSingleTaskThreshold()) {
-                    threadCount = 1;
+                if (recordList != null) {
+                    threadCount = recordList.size();
+                } else {
+                    if (size < downLoader.getConfig().getSingleTaskThreshold()) {
+                        threadCount = 1;
+                    }
                 }
 
-                ExecutorService executorService = Executors.newCachedThreadPool();
                 countDownLatch = new CountDownLatch(threadCount);
                 int blockSize = (int) (record.getContentLength() / threadCount);
                 List<Future<Boolean>> list = new ArrayList<>(threadCount);
 
                 for (int i = 0; i < threadCount; i++) {
-                    long start = i * blockSize;
-                    long end = (i + 1) * blockSize;
-                    if (i == threadCount - 1) {
-                        // subTask.endLocation  +=  (length % blockSize);
-                        end = record.getContentLength();
+                    SubTaskRecord subRecord = null;
+                    if (recordList == null){
+                        long start = i * blockSize;
+                        long end = (i + 1) * blockSize;
+                        if (i == threadCount - 1) {
+                            end = record.getContentLength(); // subTask.endLocation  +=  (length % blockSize);
+                        }
+                        subRecord = new SubTaskRecord();
+                        subRecord.setTaskID(record.getId());
+                        subRecord.setStart(start);
+                        subRecord.setEnd(end);
+                        downLoader.recordManager.subTask().add(subRecord);
+                    }else{
+                        subRecord = recordList.get(i);
                     }
-
-                    SubTaskRecord subRecord = new SubTaskRecord();
-                    downLoader.recordManager.subTask().add(subRecord);
-                    subRecord.setTaskID(record.getId());
-                    subRecord.setStart(start);
-                    subRecord.setEnd(end);
-                    SubTask subTask = new SubTask(this,subRecord);
+                    SubTask subTask = new SubTask(this, subRecord);
                     Log.d(TAG, "run: 启动子线程" + i);
                     Future<Boolean> future = executorService.submit(subTask);
                     list.add(future);
@@ -175,96 +177,54 @@ public class Task implements Runnable {
                 }
 
                 if (record.isFinished()) {
-                    Log.d(TAG, "下载完成" + record.getFinishedLength() + "/" + contentLength);
+                    Debug.log("下载完成 " + record.getFinishedLength() + "/" + contentLength);
                     downLoader.onTaskFinished(this);
                     downLoader.dispatcher().finished(this);
-                } else if (state == Const.DOWNLOAD_STATE_STOP){
-                    Log.d(TAG, "下载停止" + record.getFinishedLength() + "/" + contentLength);
+                    downLoader.recordManager.task().update(record);
+                    downLoader.recordManager.subTask().deleteByTaskId(record.getId());
+                } else if (getState() == Const.DOWNLOAD_STATE_STOP) {
+                    Debug.log("下载停止 " + record.getFinishedLength() + "/" + contentLength);
                     downLoader.onTaskStop(this);
                     downLoader.dispatcher().stoped(this);
-                }else if(state == Const.DOWNLOAD_STATE_CANCEL){
-                    Log.d(TAG, "下载取消" + record.getFinishedLength() + "/" + contentLength);
+                    downLoader.recordManager.task().update(record);
+                } else if (getState() == Const.DOWNLOAD_STATE_CANCEL) {
+                    Debug.log("下载取消 " + record.getFinishedLength() + "/" + contentLength);
                     downLoader.onCancelTask(this);
                     downLoader.dispatcher().finished(this);
+                    downLoader.recordManager.task().delete(record.getId());
+                    downLoader.recordManager.subTask().deleteByTaskId(record.getId());
                 }
             } else {
+                Debug.log("下载失败 " + record.getFinishedLength());
                 downLoader.onTaskError(this, "响应码:" + code);
+                downLoader.dispatcher().stoped(this);
+                downLoader.recordManager.task().update(record);
             }
 
         } catch (Exception e) {
             e.printStackTrace();
             downLoader.onTaskError(this, e.toString());
+            downLoader.dispatcher().stoped(this);
+            downLoader.recordManager.task().update(record);
         } finally {
             closeIO();
         }
     }
 
-//    private void multipleTaskDownloading() throws Exception {
-//        executorService = Executors.newCachedThreadPool();
-//        subTaskArray = new ArrayList(maxThreads);
-//        countDownLatch = new CountDownLatch(maxThreads);
-//
-//        int blockSize = (int) (record.getContentLength() / maxThreads);
-//        List<Future<Boolean>> list = new ArrayList<>(maxThreads);
-//        for (int i = 0; i < maxThreads; i++) {
-//            long start = i * blockSize;
-//            long end = (i + 1) * blockSize;
-//            if (i == maxThreads - 1) {
-//                // subTask.endLocation  +=  (length % blockSize);
-//                end = record.getContentLength();
-//            }
-//
-//            SubTaskRecord subRecord = new SubTaskRecord();
-//            downLoader.recordManager.subTask().add(subRecord);
-//            subRecord.setTaskID(record.getId());
-//            subRecord.setStart(start);
-//            subRecord.setEnd(end);
-//            SubTask subTask = new SubTask(this,subRecord);
-//            subTaskArray.add(subTask);
-//            Log.d(TAG, "run: 启动子线程" + i);
-//            Future<Boolean> future = executorService.submit(subTask);
-//            list.add(future);
-//        }
-//
-//        try {
-//            countDownLatch.await();
-//            for (int i = 0; i < list.size(); i++) {
-//                Future<Boolean> future = list.get(i);
-//                if (!future.get().booleanValue()) {
-//                    throw new Exception("子线程执行失败");
-//                }
-//            }
-//        } catch (ExecutionException e) {
-//            e.printStackTrace();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-//    private void singleTaskDownloading() throws IOException {
-//        inputStream = conn.getInputStream();
-//        byte[] buf = new byte[1024];
-//        int len = 0;
-//        while (state == Const.DOWNLOAD_STATE_DOWNLOADING && (len = inputStream.read(buf)) != -1) {
-//            file.write(buf, 0, len);
-//            long finished = record.getFinishedLength() + len;
-//            record.setFinishedLength(finished);
-//            updateProcess();
-//        }
-//    }
-
-    public synchronized void appendFinished(long len,long subTaskId,long subFinished) {
+    public synchronized void appendFinished(long len, SubTask subTask) {
         long finished = record.getFinishedLength() + len;
         record.setFinishedLength(finished);
-        updateProcess();
+        updateProcess(subTask);
     }
 
-    public void updateProcess() {
+    public void updateProcess(SubTask subTask) {
         long curTime = System.currentTimeMillis();
         long interval = curTime - lastTime;
         delayTime += interval;
         if (delayTime > downLoader.getConfig().getUpdateInterval()
                 || record.isFinished()) {
+            downLoader.recordManager.task().update(record);
+            downLoader.recordManager.subTask().update(subTask.record);
             downLoader.onTaskProcess(this);
             delayTime = 0;
         }
@@ -273,8 +233,8 @@ public class Task implements Runnable {
     }
 
     public void stop() {
-        if (state == Const.DOWNLOAD_STATE_DOWNLOADING) {
-            state = Const.DOWNLOAD_STATE_STOP;
+        if (getState() == Const.DOWNLOAD_STATE_DOWNLOADING) {
+            setState(Const.DOWNLOAD_STATE_STOP);
             closeIO();
         }
     }
@@ -284,14 +244,6 @@ public class Task implements Runnable {
         try {
             if (file != null) {
                 file.close();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        try {
-            if (inputStream != null) {
-                inputStream.close();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -308,11 +260,11 @@ public class Task implements Runnable {
     }
 
     public void cancel() {
-        if (state == Const.DOWNLOAD_STATE_DOWNLOADING) {
-            state = Const.DOWNLOAD_STATE_CANCEL;
+        if (getState() == Const.DOWNLOAD_STATE_DOWNLOADING) {
+            setState(Const.DOWNLOAD_STATE_CANCEL);
             closeIO();
         }
-        File file = new File(record.getFilePath()+record+getFileName());
+        File file = new File(record.getFilePath() + record + getFileName());
         if (file.exists()) {
             file.delete();
         }

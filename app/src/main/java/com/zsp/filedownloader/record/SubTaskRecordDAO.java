@@ -19,37 +19,44 @@ public class SubTaskRecordDAO {
     static final String TABLE_NAME = SqlConst.TB_THREAD;
 
     public long add(SubTaskRecord record) {
-        Debug.log("添加子任务记录" + record);
         SQLiteDatabase db = RecordManager.openDatabase();
         ContentValues values = contentValuesToRecord(record);
         long id = db.insert(TABLE_NAME, null, values);
         record.setId(id);
+        Debug.log("添加一条子任务记录" + record);
         return id;
     }
 
     public int update(SubTaskRecord record) {
-        Debug.log("更新子任务记录" + record);
         SQLiteDatabase db = RecordManager.openDatabase();
         ContentValues values = contentValuesToRecord(record);
         String whereClause = BaseColumns._ID + "=?";
         String[] whereArgs = {String.valueOf(record.getId())};
-        return db.update(TABLE_NAME, values, whereClause, whereArgs);
+        int count = db.update(TABLE_NAME, values, whereClause, whereArgs);
+        Debug.log("更新"+count+"条子任务记录" + record);
+        return count;
     }
 
-    public int delete(long id,long pid) {
-        Debug.log("删除子任务记录 子id=" + id + "父id="+pid);
+    public int delete(String whereClause,String[] whereArgs) {
         SQLiteDatabase db = RecordManager.openDatabase();
-        String whereClause = BaseColumns._ID + "=? and "+SqlConst.TB_TASK_ID+"=?";
+        return db.delete(TABLE_NAME, whereClause, whereArgs);
+    }
+
+    public int deleteByTaskId(long pid) {
+        String whereClause = SqlConst.TB_TASK_ID+"=?";
         String[] whereArgs = {
-                String.valueOf(id),
                 String.valueOf(pid)
         };
-        return db.delete(TABLE_NAME, whereClause, whereArgs);
+        int count =  delete(whereClause,whereArgs);
+        Debug.log("删除"+count+"条子任务记录 taskId="+pid);
+        return count;
+
     }
 
     public SubTaskRecord querySingle(String whereClause,String[] whereArgs) {
         SQLiteDatabase db = RecordManager.openDatabase();
-        Cursor cursor = db.rawQuery(TABLE_NAME,whereArgs);
+        String sql = "select * from "+ TABLE_NAME +" where "+whereClause;
+        Cursor cursor = db.rawQuery(sql,whereArgs);
         SubTaskRecord record = null;
         if (cursor.moveToFirst()) {
             record = cursorToRecord(cursor);
@@ -58,10 +65,20 @@ public class SubTaskRecordDAO {
         return record;
     }
 
-    public List<TaskRecord> query(String whereClause, String[] whereArgs) {
+    public List<SubTaskRecord> queryByTaskId(long taskId){
+        String whereClause = SqlConst.TB_TASK_ID+"=?";
+        String[] whereArgs = {
+                String.valueOf(taskId)
+        };
+        return query(whereClause,whereArgs);
+    }
+
+
+    public List<SubTaskRecord> query(String whereClause, String[] whereArgs) {
         List list = null;
         SQLiteDatabase db = RecordManager.openDatabase();
-        Cursor cursor = db.rawQuery(TABLE_NAME,whereArgs);
+        String sql = "select * from "+ TABLE_NAME +" where "+whereClause;
+        Cursor cursor = db.rawQuery(sql,whereArgs);
         if (cursor.getCount() > 0){
             list = new LinkedList();
             if (cursor.moveToFirst()) {

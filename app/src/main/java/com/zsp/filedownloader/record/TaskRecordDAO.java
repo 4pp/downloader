@@ -47,7 +47,8 @@ public class TaskRecordDAO {
 
     public TaskRecord querySingle(String whereClause, String[] whereArgs) {
         SQLiteDatabase db = RecordManager.openDatabase();
-        Cursor cursor = db.rawQuery(TABLE_NAME, whereArgs);
+        String sql = "select * from "+ TABLE_NAME +" where "+whereClause;
+        Cursor cursor = db.rawQuery(sql,whereArgs);
         TaskRecord record = null;
         if (cursor.moveToFirst()) {
             record = cursorToRecord(cursor);
@@ -59,7 +60,8 @@ public class TaskRecordDAO {
     public List<TaskRecord> query(String whereClause, String[] whereArgs) {
         List list = null;
         SQLiteDatabase db = RecordManager.openDatabase();
-        Cursor cursor = db.rawQuery(TABLE_NAME, whereArgs);
+        String sql = "select * from "+ TABLE_NAME +" where "+whereClause;
+        Cursor cursor = db.rawQuery(sql,whereArgs);
         if (cursor.getCount() > 0) {
             list = new LinkedList();
             if (cursor.moveToFirst()) {
