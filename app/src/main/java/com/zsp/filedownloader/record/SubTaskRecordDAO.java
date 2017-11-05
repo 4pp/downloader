@@ -33,7 +33,7 @@ public class SubTaskRecordDAO {
         String whereClause = BaseColumns._ID + "=?";
         String[] whereArgs = {String.valueOf(record.getId())};
         int count = db.update(TABLE_NAME, values, whereClause, whereArgs);
-        Debug.log("更新"+count+"条子任务记录" + record);
+        //Debug.log("更新"+count+"条子任务记录" + record);
         return count;
     }
 
@@ -82,11 +82,14 @@ public class SubTaskRecordDAO {
         if (cursor.getCount() > 0){
             list = new LinkedList();
             if (cursor.moveToFirst()) {
+                Debug.log("查询开始================================");
                 for (int i = 0; i < cursor.getCount(); i++) {
                     SubTaskRecord record = cursorToRecord(cursor);
                     list.add(record);
+                    Debug.log(record.toString());
                     cursor.moveToNext();
                 }
+                Debug.log("查询完成================================");
             }
         }
 
@@ -99,7 +102,7 @@ public class SubTaskRecordDAO {
         values.put(SqlConst.TB_TASK_ID, record.getTaskID());
         values.put(SqlConst.TB_THREAD_START, record.getStart());
         values.put(SqlConst.TB_THREAD_END, record.getEnd());
-        values.put(SqlConst.TB_THREAD_FINISHED, record.getFinshed());
+        values.put(SqlConst.TB_THREAD_FINISHED, record.getFinished());
         return values;
     }
 
@@ -109,7 +112,7 @@ public class SubTaskRecordDAO {
         record.setTaskID(cursor.getLong(1));
         record.setStart(cursor.getLong(2));
         record.setEnd(cursor.getLong(3));
-        record.setFinshed(cursor.getLong(4));
+        record.setFinished(cursor.getLong(4));
         return record;
     }
 }

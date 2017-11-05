@@ -10,6 +10,7 @@ import com.zsp.filedownloader.DownLoadListener;
 import com.zsp.filedownloader.Task;
 import com.zsp.filedownloader.DownLoader;
 import com.zsp.filedownloader.R;
+import com.zsp.filedownloader.record.SubTaskRecord;
 
 import java.util.List;
 
@@ -27,8 +28,8 @@ public class DemoActivity extends AppCompatActivity implements DownLoadListener{
         findViewById(R.id.btn_add).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-               // DownLoader.getInstance().add("http://res9.d.cn/android/yxzx.apk",System.currentTimeMillis()+"-yxzx");
-                DownLoader.getInstance().add("http://192.168.3.6:8080/pdf.zip");
+                DownLoader.getInstance().add("http://res9.d.cn/android/yxzx.apk",System.currentTimeMillis()+"-yxzx");
+//                DownLoader.getInstance().add("http://192.168.3.6:8080/123.zip");
             }
         });
 
@@ -60,6 +61,12 @@ public class DemoActivity extends AppCompatActivity implements DownLoadListener{
                 Log.d(TAG, "onClick: 重启:"+position);
                 Task task = (Task) adapter.getItem(position);
                 DownLoader.getInstance().restart(task.getId());
+
+//                SubTaskRecord record = new SubTaskRecord();
+//                record.setId(1);
+//                record.setTaskID(1);
+//                record.setFinished((long)(Math.random()* 100));
+//                DownLoader.getInstance().recordManager.subTask().update(record);
             }
         });
 

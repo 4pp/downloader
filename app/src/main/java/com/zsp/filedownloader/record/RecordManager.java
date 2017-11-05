@@ -4,6 +4,8 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
+import java.util.List;
+
 /**
  * Created by zsp on 2017/11/2.
  */
@@ -46,5 +48,35 @@ public class RecordManager {
 
     public TaskRecordDAO task() {
         return taskRecord;
+    }
+
+    public void updateTaskAndSubTask(TaskRecord record, List<SubTaskRecord> sublist){
+        SQLiteDatabase db =  openDatabase();
+        try{
+            db.beginTransaction();
+            task().update(record);
+            for (int i=0;i<sublist.size();i++){
+                subTask().update(sublist.get(i));
+            }
+            db.setTransactionSuccessful();
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally {
+            db.endTransaction();
+        }
+    }
+
+    public void updateTaskAndSubTask(TaskRecord record, SubTaskRecord subRecord) {
+        SQLiteDatabase db = RecordManager.openDatabase();
+        db.beginTransaction();
+        try {
+            subTask().update(subRecord);
+            task().update(record);
+            db.setTransactionSuccessful();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            db.endTransaction();
+        }
     }
 }

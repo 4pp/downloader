@@ -16,7 +16,7 @@ public class TaskRecord {
     private String eTag;
     private String disposition;
     private long contentLength;
-    private long finishedLength;
+    private volatile long finishedLength;
     private int state;
     private long createAt;
     private int[] tasks;
@@ -85,11 +85,11 @@ public class TaskRecord {
         this.contentLength = contentLength;
     }
 
-    public long getFinishedLength() {
+    public synchronized long getFinishedLength() {
         return finishedLength;
     }
 
-    public void setFinishedLength(long finishedLength) {
+    public synchronized void setFinishedLength(long finishedLength) {
         this.finishedLength = finishedLength;
     }
 

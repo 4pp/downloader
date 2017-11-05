@@ -225,14 +225,16 @@ public class DownLoader {
     public String getSaveFileName(String url,String fileName){
         String saveName = fileName;
         if (TextUtils.isEmpty(fileName)) {
-            fileName = url.substring(url.lastIndexOf("/"));
-            if (TextUtils.isEmpty(fileName)) {
+            saveName = url.substring(url.lastIndexOf("/"));
+            if (TextUtils.isEmpty(saveName)) {
                 saveName = "download-" + System.currentTimeMillis();
             }
         } else {
-            String suffix = url.substring(url.lastIndexOf("."));
-            if (!TextUtils.isEmpty(suffix)) {
-                saveName = fileName + suffix;
+            if (saveName.indexOf(".") == -1){
+                String suffix = url.substring(url.lastIndexOf("."));
+                if (!TextUtils.isEmpty(suffix)) {
+                    saveName = fileName + suffix;
+                }
             }
         }
         return saveName;

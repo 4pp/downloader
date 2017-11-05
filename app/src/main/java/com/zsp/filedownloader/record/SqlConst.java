@@ -17,13 +17,13 @@ public class SqlConst {
     static final String TB_TASK_ETAG = "e_tag";
     static final String TB_TASK_DISPOSITION = "disposition";
     static final String TB_TASK_STATE = "task_state";
-    static final String TB_SUB = "sub";
+    static final String TB_SUB = "sub_task";
     static final String TB_CREATE_AT = "create_at";
 
     static final String TB_THREAD = "subtask";
     static final String TB_THREAD_START = "start";
     static final String TB_THREAD_END = "end";
-    static final String TB_THREAD_FINISHED = "finished";
+    static final String TB_THREAD_FINISHED = "finished_length";
     static final String TB_TASK_ID = "task_id";
 
     static final String TB_TASK_SQL_CREATE = "CREATE TABLE " +
@@ -38,7 +38,7 @@ public class SqlConst {
             SqlConst.TB_TASK_MIME_TYPE + " CHAR, " +
             SqlConst.TB_TASK_ETAG + " CHAR, " +
             SqlConst.TB_SUB + " CHAR, " +
-            SqlConst.TB_CREATE_AT + " INTEGER, " +
+            SqlConst.TB_CREATE_AT + " CHAR, " +
             SqlConst.TB_TASK_DISPOSITION + " CHAR)";
 
     static final String TB_THREAD_SQL_CREATE = "CREATE TABLE " +

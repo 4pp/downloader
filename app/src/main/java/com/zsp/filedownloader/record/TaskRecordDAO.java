@@ -29,7 +29,7 @@ public class TaskRecordDAO {
 
 
     public int update(TaskRecord record) {
-        Debug.log("更新任务记录" + record);
+        //Debug.log("更新任务记录" + record);
         SQLiteDatabase db = RecordManager.openDatabase();
         ContentValues values = contentValuesToRecord(record);
         String whereClause = BaseColumns._ID + "=?";
