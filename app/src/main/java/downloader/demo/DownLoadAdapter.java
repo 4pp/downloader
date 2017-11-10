@@ -1,4 +1,4 @@
-package com.zsp.filedownloader.demo;
+package downloader.demo;
 
 import android.content.Context;
 import android.util.Log;
@@ -11,9 +11,9 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.zsp.filedownloader.DownLoadState;
+import downloader.DownLoadState;
 import com.zsp.filedownloader.R;
-import com.zsp.filedownloader.Task;
+import downloader.Task;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

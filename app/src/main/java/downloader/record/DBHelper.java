@@ -1,10 +1,10 @@
-package com.zsp.filedownloader.record;
+package downloader.record;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-import com.zsp.filedownloader.Debug;
+import downloader.Debug;
 
 /**
  * Created by zsp on 2017/11/2.

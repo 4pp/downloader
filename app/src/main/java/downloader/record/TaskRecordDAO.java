@@ -1,11 +1,11 @@
-package com.zsp.filedownloader.record;
+package downloader.record;
 
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.provider.BaseColumns;
 
-import com.zsp.filedownloader.Debug;
+import downloader.Debug;
 
 import java.util.LinkedList;
 import java.util.List;

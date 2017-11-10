@@ -1,4 +1,4 @@
-package com.zsp.filedownloader.demo;
+package downloader.demo;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -10,8 +10,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
-import com.zsp.filedownloader.Config;
-import com.zsp.filedownloader.DownLoader;
+import downloader.DownLoader;
 import com.zsp.filedownloader.R;
 
 import java.io.File;

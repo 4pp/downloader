@@ -1,4 +1,4 @@
-package com.zsp.filedownloader;
+package downloader;
 
 import android.util.Log;
 

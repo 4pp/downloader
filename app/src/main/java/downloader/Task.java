@@ -1,10 +1,10 @@
-package com.zsp.filedownloader;
+package downloader;
 
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
-import com.zsp.filedownloader.record.SubTaskRecord;
-import com.zsp.filedownloader.record.TaskRecord;
+import downloader.record.SubTaskRecord;
+import downloader.record.TaskRecord;
 
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -34,6 +34,10 @@ public class Task implements Runnable {
 
     public TaskRecord getRecord() {
         return record;
+    }
+
+    public DownLoader getDownLoader() {
+        return downLoader;
     }
 
     public long getId() {
@@ -76,8 +80,6 @@ public class Task implements Runnable {
     private RandomAccessFile file;
     private HttpURLConnection conn;
 
-    //private int state = Const.DOWNLOAD_STATE_WAIT;
-
     public void setState(int state) {
         if (state == DownLoadState.DOWNLOAD_STATE_DOWNLOADING) {
             sortLevel = 1;
@@ -104,7 +106,8 @@ public class Task implements Runnable {
             downLoader.onTaskConnect(this);
             URL url = new URL(record.getDownloadUrl());
             conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(5 * 1000);
+            conn.setConnectTimeout(downLoader.getConfig().getConnectTimeout());
+            conn.setReadTimeout(downLoader.getConfig().getReadTimeout());
             conn.setRequestMethod("GET");
             int code = conn.getResponseCode();
             if (code == 200) {
@@ -131,12 +134,6 @@ public class Task implements Runnable {
                 downLoader.recordManager.task().update(record);
                 long size = contentLength / 1024;
                 Debug.log("下载内容 contentLength:" + size + "kb" + " len:" + contentLength);
-
-//                if (size > downLoader.getConfig().getSingleTaskThreshold()) {
-//                    multipleTaskDownloading();
-//                } else {
-//                    singleTaskDownloading();
-//                }
 
                 ExecutorService executorService = Executors.newCachedThreadPool();
                 List<SubTaskRecord> recordList = downLoader.getRecordManager().subTask().queryByTaskId(record.getId());
@@ -297,15 +294,6 @@ public class Task implements Runnable {
         }
         Log.d(TAG, "cancel: 取消了任务:" + file.getAbsolutePath());
     }
-
-//    public void delete(){
-//        downLoader.recordManager.task().delete(record.getId());
-//        File file = new File(record.getFilePath() + record + getFileName());
-//        if (file.exists()) {
-//            file.delete();
-//        }
-//        Log.d(TAG, "cancel: 删除了任务:" + file.getAbsolutePath());
-//    }
 
     @Override
     public boolean equals(Object obj) {

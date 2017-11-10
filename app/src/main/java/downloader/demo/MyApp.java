@@ -1,11 +1,10 @@
-package com.zsp.filedownloader.demo;
+package downloader.demo;
 
 import android.app.Application;
 import android.os.Environment;
-import android.support.v4.app.ActivityCompat;
 
-import com.zsp.filedownloader.Config;
-import com.zsp.filedownloader.DownLoader;
+import downloader.Config;
+import downloader.DownLoader;
 
 import java.io.File;
 

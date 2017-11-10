@@ -1,6 +1,6 @@
-package com.zsp.filedownloader;
+package downloader;
 
-import com.zsp.filedownloader.record.SubTaskRecord;
+import downloader.record.SubTaskRecord;
 
 import java.io.InputStream;
 import java.io.RandomAccessFile;
@@ -79,6 +79,8 @@ public class SubTask implements Callable {
         try {
             URL url = new URL(downloadUrl);
             conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(pTask.getDownLoader().getConfig().getConnectTimeout());
+            conn.setReadTimeout(pTask.getDownLoader().getConfig().getReadTimeout());
             conn.setRequestProperty("Range", "bytes=" + (record.getStart() + record.getFinished()) + "-" + (record.getEnd() - 1));
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Charset", "UTF-8");

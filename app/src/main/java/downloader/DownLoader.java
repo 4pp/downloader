@@ -1,12 +1,12 @@
-package com.zsp.filedownloader;
+package downloader;
 
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 
-import com.zsp.filedownloader.record.RecordManager;
-import com.zsp.filedownloader.record.TaskRecord;
+import downloader.record.RecordManager;
+import downloader.record.TaskRecord;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,7 +15,9 @@ import java.util.List;
 
 /**
  * Created by zsp on 2017/10/27.
- * 下载器使用入口
+ * 下载器使用接口,包括下载、删除、暂停、恢复。在任务不同的关键点分别对应响应的回调接口
+ * 每个下载文件对应一个Task任务,可以同时下载多个文件
+ * 在任务创建后,并取得数据长度后,由SubTask子任务完成分片下载
  */
 
 public class DownLoader {
@@ -262,7 +264,7 @@ public class DownLoader {
         });
     }
 
-    public String getSaveFileName(String url, String fileName) {
+    private String getSaveFileName(String url, String fileName) {
         String saveName = fileName;
         if (TextUtils.isEmpty(fileName)) {
             saveName = url.substring(url.lastIndexOf("/"));

@@ -1,4 +1,4 @@
-package com.zsp.filedownloader;
+package downloader;
 
 /**
  * Created by zsp on 2017/10/31.

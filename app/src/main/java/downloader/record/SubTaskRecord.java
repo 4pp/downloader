@@ -1,4 +1,4 @@
-package com.zsp.filedownloader.record;
+package downloader.record;
 
 /**
  * Created by zsp on 2017/11/2.

@@ -1,10 +1,11 @@
-package com.zsp.filedownloader.demo;
+package downloader.demo;
 
+import android.graphics.Color;
 import android.os.Bundle;
-import android.os.PersistableBundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.PagerTabStrip;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
@@ -13,7 +14,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.zsp.filedownloader.DownLoader;
+import downloader.DownLoader;
 import com.zsp.filedownloader.R;
 
 
@@ -40,6 +41,7 @@ public class DownloadActivity extends AppCompatActivity implements Toolbar.OnMen
     protected void initView(Bundle savedInstanceState) {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.setTitle("下载管理");
+        toolbar.setTitleTextColor(Color.WHITE);
         setSupportActionBar(toolbar);
         toolbar.setOnMenuItemClickListener(this);
 
@@ -50,6 +52,9 @@ public class DownloadActivity extends AppCompatActivity implements Toolbar.OnMen
         fragmentAdapter =  new FragmentAdapter(fm);
         mViewPager.setOffscreenPageLimit(2);
         mViewPager.setAdapter(fragmentAdapter);
+        tabbar.setTextColor(ContextCompat.getColor(this,R.color.write));
+        tabbar.setBackgroundColor(ContextCompat.getColor(this, R.color.colorPrimaryDark));
+        tabbar.setTabIndicatorColor(ContextCompat.getColor(this,R.color.colorAccent));
 //        tabbar.setViewPager(mViewPager);
 //        tabbar.setCurrentTab(0);
 

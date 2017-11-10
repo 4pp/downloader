@@ -1,4 +1,4 @@
-package com.zsp.filedownloader.demo;
+package downloader.demo;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -8,10 +8,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
 
-import com.zsp.filedownloader.DownLoadListener;
-import com.zsp.filedownloader.DownLoader;
+import downloader.DownLoadListener;
+import downloader.DownLoader;
 import com.zsp.filedownloader.R;
-import com.zsp.filedownloader.Task;
+import downloader.Task;
 
 import java.util.List;
 

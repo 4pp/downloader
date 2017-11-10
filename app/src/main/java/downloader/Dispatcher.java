@@ -1,6 +1,6 @@
-package com.zsp.filedownloader;
+package downloader;
 
-import com.zsp.filedownloader.record.TaskRecord;
+import downloader.record.TaskRecord;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -21,6 +21,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Dispatcher {
 
     private DownLoader downLoader;
+    //可最大并行执行的任务数量
     private int maxTasks;
 
     //暂停/停止 队列
@@ -41,23 +42,26 @@ public class Dispatcher {
         maxTasks = this.downLoader.getConfig().getMaxTasks();
     }
 
-    public void loadTask(){
+    /**
+     * 加载任务到内存中,分别放入队列
+     */
+    public void loadTask() {
         executorService().submit(new Runnable() {
             @Override
             public void run() {
                 List<TaskRecord> list = downLoader.recordManager.task().queryAll();
-                for (Iterator<TaskRecord> itr = list.iterator(); itr.hasNext();){
+                for (Iterator<TaskRecord> itr = list.iterator(); itr.hasNext(); ) {
                     TaskRecord record = itr.next();
-                    Task task = new Task(downLoader,record);
-                    if (record.getState()== DownLoadState.DOWNLOAD_STATE_FINISH){
+                    Task task = new Task(downLoader, record);
+                    if (record.getState() == DownLoadState.DOWNLOAD_STATE_FINISH) {
                         finishedQueue.add(task);
-                    }else if(record.getState() == DownLoadState.DOWNLOAD_STATE_WAIT){
+                    } else if (record.getState() == DownLoadState.DOWNLOAD_STATE_WAIT) {
                         readyQueue.add(task);
-                        runningQueue.put(task.getId(),task);
-                    }else{
+                        runningQueue.put(task.getId(), task);
+                    } else {
                         record.setState(DownLoadState.DOWNLOAD_STATE_STOP);
                         stopQueue.add(task);
-                        runningQueue.put(task.getId(),task);
+                        runningQueue.put(task.getId(), task);
                     }
                 }
             }
@@ -75,11 +79,11 @@ public class Dispatcher {
     synchronized void enqueue(Task task) {
         if (downloadQueue.size() < maxTasks) {
             downloadQueue.add(task);
-            Debug.log(task.getId()+" 可立即执行,放入下载队列");
+            Debug.log(task.getId() + " 可立即执行,放入下载队列");
             executorService().execute(task);
         } else {
             readyQueue.add(task);
-            Debug.log(task.getId()+" 任务已满,放入等待队列");
+            Debug.log(task.getId() + " 任务已满,放入等待队列");
         }
         runningQueue.put(task.getId(), task);
     }
@@ -88,22 +92,22 @@ public class Dispatcher {
     synchronized void removeRunningQueue(Task task) {
         if (!downloadQueue.remove(task)) throw new AssertionError("Task wasn't running!");
         runningQueue.remove(task.getId());
-        Debug.log(task.getId()+" 移除执行队列");
+        Debug.log(task.getId() + " 移除执行队列");
         promoteCalls();
     }
 
-    synchronized void moveStopQueue(Task task){
+    synchronized void moveStopQueue(Task task) {
         if (!downloadQueue.remove(task)) throw new AssertionError("Task wasn't running!");
         stopQueue.add(task);
-        Debug.log(task.getId()+" 转移到停止队列");
+        Debug.log(task.getId() + " 转移到停止队列");
         promoteCalls();
     }
 
-    synchronized void moveFinishedQueue(Task task){
+    synchronized void moveFinishedQueue(Task task) {
         if (!downloadQueue.remove(task)) throw new AssertionError("Task wasn't running!");
         runningQueue.remove(task.getId());
         finishedQueue.add(task);
-        Debug.log(task.getId()+" 转移到完成队列");
+        Debug.log(task.getId() + " 转移到完成队列");
         promoteCalls();
     }
 
@@ -122,10 +126,16 @@ public class Dispatcher {
         }
     }
 
-    synchronized Task restartTask(long id){
+    /**
+     * 重新运行已停止的任务
+     *
+     * @param id 任务id
+     * @return
+     */
+    synchronized Task restartTask(long id) {
         Task task = runningQueue.get(id);
 
-        if (!stopQueue.remove(task)){
+        if (!stopQueue.remove(task)) {
             return null;
         }
 
@@ -139,13 +149,17 @@ public class Dispatcher {
         return task;
     }
 
-
-      synchronized Task cancelTask(long id) {
+    /**
+     * 取消任务,包括删除已完成的任务,同时会删除下载的文件
+     * @param id
+     * @return
+     */
+    synchronized Task cancelTask(long id) {
         Task task = runningQueue.get(id);
-        if (task == null){
-            for(Iterator<Task> itr = finishedQueue.iterator(); itr.hasNext();){
+        if (task == null) {
+            for (Iterator<Task> itr = finishedQueue.iterator(); itr.hasNext(); ) {
                 task = itr.next();
-                if (task.getId() == id){
+                if (task.getId() == id) {
                     finishedQueue.remove(task);
                     task.cancel();
                     return task;
@@ -163,7 +177,7 @@ public class Dispatcher {
             task.cancel();
         }
 
-        if (stopQueue.contains(task)){
+        if (stopQueue.contains(task)) {
             stopQueue.remove(task);
             runningQueue.remove(id);
             task.cancel();
@@ -172,6 +186,11 @@ public class Dispatcher {
         return task;
     }
 
+    /**
+     * 停止任务
+     * @param id
+     * @return
+     */
     synchronized Task stopTask(long id) {
         Task task = runningQueue.get(id);
 
@@ -188,17 +207,17 @@ public class Dispatcher {
             Task task = runningQueue.get(key);
             list.add(task);
         }
-        Debug.log("加载在执行任务 "+list.size());
+        Debug.log("加载在执行任务 " + list.size());
         return list;
     }
 
-    public List<Task> getFinishedQueue(){
-       List<Task> list = new ArrayList<>();
-        for (Iterator<Task> itr = finishedQueue.iterator(); itr.hasNext();){
+    public List<Task> getFinishedQueue() {
+        List<Task> list = new ArrayList<>();
+        for (Iterator<Task> itr = finishedQueue.iterator(); itr.hasNext(); ) {
             Task task = itr.next();
             list.add(task);
         }
-        Debug.log("加载已完成任务 "+list.size());
+        Debug.log("加载已完成任务 " + list.size());
         return list;
     }
 }

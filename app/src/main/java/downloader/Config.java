@@ -1,4 +1,6 @@
-package com.zsp.filedownloader;
+package downloader;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by zsp on 2017/10/30.
@@ -11,6 +13,8 @@ public class Config {
     private int updateInterval;
     private int singleTaskThreshold;
     private String saveDir;
+    private int connectTimeout;
+    private int readTimeout;
 
     public String getSaveDir() {
         return saveDir;
@@ -32,14 +36,24 @@ public class Config {
         return updateInterval;
     }
 
+    public int getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public int getReadTimeout() {
+        return readTimeout;
+    }
+
+
     public Config(Builder builder) {
         saveDir = builder.saveDir;
         maxTasks = builder.maxTasks;
         maxThreads = builder.maxThreads;
         updateInterval = builder.updateInterval;
         singleTaskThreshold = builder.singleTaskThreshold;
+        connectTimeout = builder.connectTimeout;
+        readTimeout = builder.readTimeout;
         Debug.enable = builder.debug;
-
     }
 
     public static class Builder {
@@ -55,7 +69,8 @@ public class Config {
         //启用任务内多线程下载的数据量的临界值,单位KB
         private int singleTaskThreshold = 100;
         private boolean debug = true;
-
+        private int connectTimeout = 10_000;
+        private int readTimeout = 10_000;
 
         public Builder setSaveDir(String path) {
             saveDir = path;
@@ -82,9 +97,30 @@ public class Config {
             return this;
         }
 
-        public Builder debug(boolean enable){
+        public Builder debug(boolean enable) {
             debug = enable;
             return this;
+        }
+
+        public Builder connectTimeout(long timeout, TimeUnit unit) {
+            connectTimeout = (int)checkTimeoutArgument(timeout,unit);
+            return this;
+        }
+
+        public Builder readTimeout(long timeout, TimeUnit unit) {
+            readTimeout = (int)checkTimeoutArgument(timeout,unit);
+            return this;
+        }
+
+        private long checkTimeoutArgument(long timeout, TimeUnit unit){
+            if (timeout < 0) throw new IllegalArgumentException("timeout < 0");
+            if (unit == null) throw new NullPointerException("unit == null");
+            long millis = unit.toMillis(timeout);
+            if (millis > Integer.MAX_VALUE)
+                throw new IllegalArgumentException("Timeout too large.");
+            if (millis == 0 && timeout > 0)
+                throw new IllegalArgumentException("Timeout too small.");
+            return millis;
         }
 
         public Config build() {

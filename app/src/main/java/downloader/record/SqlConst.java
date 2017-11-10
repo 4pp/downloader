@@ -1,4 +1,4 @@
-package com.zsp.filedownloader.record;
+package downloader.record;
 
 import android.provider.BaseColumns;
 
