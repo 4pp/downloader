@@ -1,9 +1,8 @@
 package com.zsp.filedownloader;
 
-import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
+import android.webkit.MimeTypeMap;
 
-import com.zsp.filedownloader.record.RecordManager;
 import com.zsp.filedownloader.record.SubTaskRecord;
 import com.zsp.filedownloader.record.TaskRecord;
 
@@ -80,7 +79,7 @@ public class Task implements Runnable {
     //private int state = Const.DOWNLOAD_STATE_WAIT;
 
     public void setState(int state) {
-        if (state == Const.DOWNLOAD_STATE_DOWNLOADING) {
+        if (state == DownLoadState.DOWNLOAD_STATE_DOWNLOADING) {
             sortLevel = 1;
         } else {
             sortLevel = 0;
@@ -110,16 +109,22 @@ public class Task implements Runnable {
             int code = conn.getResponseCode();
             if (code == 200) {
                 long contentLength = conn.getContentLength();
+
                 //新任务
                 if (record.isNew()) {
                     record.setContentLength(contentLength);
-                    try {
-                        String savePath = record.getFilePath() + record.getFileName();
-                        file = new RandomAccessFile(savePath, "rwd");
-                        file.setLength(contentLength);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    String etag = conn.getHeaderField("ETag");
+                    record.seteTag(etag);
+                    String type = conn.getContentType();
+                    record.setMimeType(type);
+
+                    //同名记录加1保存
+                    int count =  downLoader.recordManager.task().existCount(record.getDownloadUrl(),record.getFilePath());
+                    String rename = Utils.createIncreaseFilename(count,record.getFileName());
+                    record.setFileName(rename);
+                    String savePath = record.getFilePath() + record.getFileName();
+                    file = new RandomAccessFile(savePath, "rwd");
+                    file.setLength(contentLength);
                 }
 
                 downLoader.onTaskStart(this);
@@ -187,16 +192,23 @@ public class Task implements Runnable {
 
                 if (record.isFinished()) {
                     Debug.log("下载完成 " + record.getFinishedLength() + "/" + contentLength);
+                    if ("zip".equals(MimeTypeMap.getSingleton().getExtensionFromMimeType(record.getMimeType()))){
+                        Debug.log("解压文件");
+                        String savePath = record.getFilePath() + record.getFileName();
+                        File unzipFile =  Utils.unzip(savePath);
+                        Debug.log("解压完成");
+                        record.setFileName(unzipFile.getName());
+                    }
                     downLoader.onTaskFinished(this);
-                    downLoader.dispatcher().removeRunningQueue(this);
+                    downLoader.dispatcher().moveFinishedQueue(this);
                     downLoader.recordManager.task().update(record);
                     downLoader.recordManager.subTask().deleteByTaskId(record.getId());
-                } else if (getState() == Const.DOWNLOAD_STATE_STOP) {
+                } else if (getState() == DownLoadState.DOWNLOAD_STATE_STOP) {
                     Debug.log("下载停止 " + record.getFinishedLength() + "/" + contentLength);
                     downLoader.onTaskStop(this);
                     downLoader.dispatcher().moveStopQueue(this);
                     downLoader.recordManager.updateTaskAndSubTask(record,recordList);
-                } else if (getState() == Const.DOWNLOAD_STATE_CANCEL) {
+                } else if (getState() == DownLoadState.DOWNLOAD_STATE_CANCEL) {
                     Debug.log("下载取消 " + record.getFinishedLength() + "/" + contentLength);
                     downLoader.onCancelTask(this);
                     downLoader.dispatcher().removeRunningQueue(this);
@@ -221,10 +233,10 @@ public class Task implements Runnable {
     }
 
     public synchronized void updateProcess(long len, SubTask subTask) {
-        if (record.getState() != Const.DOWNLOAD_STATE_DOWNLOADING) {
+        if (record.getState() != DownLoadState.DOWNLOAD_STATE_DOWNLOADING) {
             return;
         }
-        Debug.log("增加=" + len + " 总长度=" + record.getFinishedLength() + " 子长度=" + subTask.getRecord().getFinished());
+        //Debug.log("增加=" + len + " 总长度=" + record.getFinishedLength() + " 子长度=" + subTask.getRecord().getFinished());
 
         long finished = subTask.getRecord().getFinished() + len;
         subTask.getRecord().setFinished(finished);
@@ -247,8 +259,8 @@ public class Task implements Runnable {
     }
 
     public void stop() {
-        if (getState() == Const.DOWNLOAD_STATE_DOWNLOADING) {
-            setState(Const.DOWNLOAD_STATE_STOP);
+        if (getState() == DownLoadState.DOWNLOAD_STATE_DOWNLOADING) {
+            setState(DownLoadState.DOWNLOAD_STATE_STOP);
             closeIO();
         }
     }
@@ -274,16 +286,26 @@ public class Task implements Runnable {
     }
 
     public void cancel() {
-        if (getState() == Const.DOWNLOAD_STATE_DOWNLOADING) {
-            setState(Const.DOWNLOAD_STATE_CANCEL);
+        if (getState() == DownLoadState.DOWNLOAD_STATE_DOWNLOADING) {
+            setState(DownLoadState.DOWNLOAD_STATE_CANCEL);
             closeIO();
         }
-        File file = new File(record.getFilePath() + record + getFileName());
+        downLoader.recordManager.task().delete(record.getId());
+        File file = new File(record.getFilePath() + getFileName());
         if (file.exists()) {
             file.delete();
         }
         Log.d(TAG, "cancel: 取消了任务:" + file.getAbsolutePath());
     }
+
+//    public void delete(){
+//        downLoader.recordManager.task().delete(record.getId());
+//        File file = new File(record.getFilePath() + record + getFileName());
+//        if (file.exists()) {
+//            file.delete();
+//        }
+//        Log.d(TAG, "cancel: 删除了任务:" + file.getAbsolutePath());
+//    }
 
     @Override
     public boolean equals(Object obj) {

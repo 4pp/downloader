@@ -88,7 +88,7 @@ public class SubTask implements Callable {
             file.seek(record.getStart() + record.getFinished()); // 指定开始写文件的位置
             byte[] buffer = new byte[4096];
             int len;
-            while (pTask.getState() == Const.DOWNLOAD_STATE_DOWNLOADING && (len = inputStream.read(buffer)) != -1) {
+            while (pTask.getState() == DownLoadState.DOWNLOAD_STATE_DOWNLOADING && (len = inputStream.read(buffer)) != -1) {
                 file.write(buffer, 0, len);
                 pTask.updateProcess(len,this);
             }

@@ -11,10 +11,12 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.zsp.filedownloader.Const;
-import com.zsp.filedownloader.Task;
+import com.zsp.filedownloader.DownLoadState;
 import com.zsp.filedownloader.R;
+import com.zsp.filedownloader.Task;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -22,14 +24,15 @@ import java.util.List;
  * Created by zsp on 2017/10/31.
  */
 
-public class DownLoadAdapter extends BaseAdapter {
+public class DownLoadAdapter extends BaseAdapter{
 
     private static final String TAG = "DownLoadAdapter";
 
+    SimpleDateFormat sf = new SimpleDateFormat("HH:mm:ss MM/dd");
     Context ctx;
     Listener listener;
     List<Task> dataSource;
-    boolean isTouching;
+    public boolean isTouching;
 
     public DownLoadAdapter(Context context) {
         dataSource = new LinkedList<>();
@@ -43,7 +46,11 @@ public class DownLoadAdapter extends BaseAdapter {
     public void add(Task task) {
         dataSource.add(task);
         notifyDataSetChanged();
+    }
 
+    public void insert(Task task) {
+        dataSource.add(0,task);
+        notifyDataSetChanged();
     }
 
     public void setDataSource(List<Task> list){
@@ -77,15 +84,17 @@ public class DownLoadAdapter extends BaseAdapter {
         CancelClick cancelClick;
         StopClick stopClick;
         ReStartClick restartClick;
+        OpenClick openClick;
 
         if (convertView == null) {
             LayoutInflater mInflater = LayoutInflater.from(ctx);
             convertView = mInflater.inflate(R.layout.list_item_task,
                     parent, false);
             holder = new ViewHolder();
-            holder.name = (TextView) convertView.findViewById(R.id.name);
-            holder.state = (TextView) convertView.findViewById(R.id.state);
+            holder.nameView = (TextView) convertView.findViewById(R.id.name);
+            holder.stateView = (TextView) convertView.findViewById(R.id.state);
             holder.progressBar = (ProgressBar) convertView.findViewById(R.id.progress);
+            holder.createAtView = (TextView) convertView.findViewById(R.id.createat);
 
             holder.btnCancel = (Button) convertView.findViewById(R.id.btn_cancel);
             cancelClick = new CancelClick();
@@ -108,6 +117,13 @@ public class DownLoadAdapter extends BaseAdapter {
             holder.btnReStart.setOnTouchListener(new ItemTouch());
             convertView.setTag(holder.btnReStart.getId(),restartClick);
 
+            holder.btnOpen = (Button)convertView.findViewById(R.id.btn_open);
+            openClick = new OpenClick();
+            holder.btnOpen.setOnClickListener(openClick);
+            holder.btnOpen.setOnClickListener(openClick);
+            holder.btnOpen.setOnTouchListener(new ItemTouch());
+            convertView.setTag(holder.btnOpen.getId(),openClick);
+
             convertView.setTag(holder);
 
         } else {
@@ -115,6 +131,7 @@ public class DownLoadAdapter extends BaseAdapter {
             cancelClick = (CancelClick) convertView.getTag(holder.btnCancel.getId());
             stopClick = (StopClick) convertView.getTag(holder.btnStop.getId());
             restartClick = (ReStartClick)convertView.getTag(holder.btnReStart.getId());
+            openClick = (OpenClick) convertView.getTag(holder.btnOpen.getId());
         }
 
         cancelClick.setPosition(position);
@@ -126,9 +143,14 @@ public class DownLoadAdapter extends BaseAdapter {
         restartClick.setPosition(position);
         restartClick.setListener(listener);
 
+        openClick.setPosition(position);
+        openClick.setListener(listener);
+
 
         Task task = dataSource.get(position);
-        holder.name.setText(task.getDownloadUrl());
+        holder.nameView.setText(task.getFileName());
+        String time = sf.format(new Date(task.getCreateAt()));
+        holder.createAtView.setText(time);
         if (task.getContentLength() > 0) {
             int progress = (int) (task.getFinishedLength() * 1.0f / task.getContentLength() * 100);
             holder.progressBar.setProgress(progress);
@@ -136,18 +158,35 @@ public class DownLoadAdapter extends BaseAdapter {
             holder.progressBar.setProgress(0);
         }
 
-        if (task.getState() == Const.DOWNLOAD_STATE_WAIT){
-            holder.state.setText("等待");
-        }else if(task.getState() == Const.DOWNLOAD_STATE_STOP){
-            holder.state.setText("已停止");
-        }else if(task.getState() == Const.DOWNLOAD_STATE_CONNECT){
-            holder.state.setText("连接中");
-        }else if(task.getState() == Const.DOWNLOAD_STATE_DOWNLOADING){
-            holder.state.setText("已下载"+task.getFinishedLength() + "/" + task.getContentLength());
-        }else if(task.getState() == Const.DOWNLOAD_STATE_ERROR){
-            holder.state.setText("失败");
-        }else if(task.getState() == Const.DOWNLOAD_STATE_FINISH){
-            holder.state.setText("完成");
+        holder.progressBar.setVisibility(View.VISIBLE);
+        holder.btnCancel.setVisibility(View.VISIBLE);
+        holder.btnStop.setVisibility(View.GONE);
+        holder.btnReStart.setVisibility(View.GONE);
+        holder.btnOpen.setVisibility(View.GONE);
+
+        if (task.getState() == DownLoadState.DOWNLOAD_STATE_FINISH){
+            holder.btnOpen.setVisibility(View.VISIBLE);
+            holder.progressBar.setVisibility(View.GONE);
+        }else if(task.getState() == DownLoadState.DOWNLOAD_STATE_DOWNLOADING){
+            holder.btnStop.setVisibility(View.VISIBLE);
+        }else if(task.getState() == DownLoadState.DOWNLOAD_STATE_STOP){
+            holder.btnReStart.setVisibility(View.VISIBLE);
+        }else if(task.getState() == DownLoadState.DOWNLOAD_STATE_ERROR){
+            holder.btnReStart.setVisibility(View.VISIBLE);
+        }
+
+        if (task.getState() == DownLoadState.DOWNLOAD_STATE_WAIT){
+            holder.stateView.setText("等待");
+        }else if(task.getState() == DownLoadState.DOWNLOAD_STATE_STOP){
+            holder.stateView.setText("已停止");
+        }else if(task.getState() == DownLoadState.DOWNLOAD_STATE_CONNECT){
+            holder.stateView.setText("连接中");
+        }else if(task.getState() == DownLoadState.DOWNLOAD_STATE_DOWNLOADING){
+            holder.stateView.setText("已下载"+task.getFinishedLength() + "/" + task.getContentLength());
+        }else if(task.getState() == DownLoadState.DOWNLOAD_STATE_ERROR){
+            holder.stateView.setText("失败");
+        }else if(task.getState() == DownLoadState.DOWNLOAD_STATE_FINISH){
+            holder.stateView.setText("完成");
         }
 
         return convertView;
@@ -155,11 +194,13 @@ public class DownLoadAdapter extends BaseAdapter {
 
     private static class ViewHolder {
         ProgressBar progressBar;
-        TextView name;
-        TextView state;
+        TextView nameView;
+        TextView stateView;
+        TextView createAtView;
         Button btnCancel;
         Button btnStop;
         Button btnReStart;
+        Button btnOpen;
     }
 
     public class ItemTouch implements View.OnTouchListener{
@@ -236,9 +277,19 @@ public class DownLoadAdapter extends BaseAdapter {
         }
     }
 
-    interface Listener {
+    public static class OpenClick extends BaseItemClick{
+        @Override
+        public void onClick(View v) {
+            if (listener!=null){
+                listener.onOpen(v,position);
+            }
+        }
+    }
+
+    public interface Listener {
         void onCancel(View view, int position);
-        void onStop(View view,int position);
-        void onRestart(View view,int position);
+        void onStop(View view, int position);
+        void onRestart(View view, int position);
+        void onOpen(View view, int position);
     }
 }

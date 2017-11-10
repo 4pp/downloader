@@ -3,48 +3,73 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:padding="16dp">
-    <TextView
-        tools:text="下载地址"
-        android:id="@+id/name"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-    <ProgressBar
-        android:layout_marginTop="10dp"
-        android:id="@+id/progress"
-        style="@android:style/Widget.ProgressBar.Horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="10dp" />
-    <TextView
-        android:layout_alignParentLeft="true"
-        android:layout_marginTop="10dp"
-        tools:text="已下载"
-        android:id="@+id/state"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+    xmlns:tools="http://schemas.android.com/tools">
     <LinearLayout
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
+        android:padding="10dp"
+        android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-
-        <Button
-            android:id="@+id/btn_cancel"
-            android:layout_alignParentRight="true"
-            android:text="取消"
+        <TextView
+            tools:text="下载地址"
+            android:id="@+id/name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
+        <ProgressBar
+            android:layout_marginTop="10dp"
+            android:id="@+id/progress"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="10dp" />
+        <RelativeLayout
+            android:layout_marginTop="10dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:layout_alignParentLeft="true"
+                tools:text="已下载"
+                android:id="@+id/state"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <TextView
+                android:id="@+id/createat"
+                tools:text="下载时间"
+                android:layout_alignParentRight="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </RelativeLayout>
+        <LinearLayout
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-        <Button
-            android:id="@+id/btn_stop"
-            android:text="停止"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-        <Button
-            android:id="@+id/btn_restart"
-            android:text="继续"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            <Button
+                android:id="@+id/btn_cancel"
+                android:layout_alignParentRight="true"
+                android:text="删除"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <Button
+                android:id="@+id/btn_stop"
+                android:text="停止"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+            <Button
+                android:id="@+id/btn_restart"
+                android:text="继续"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <Button
+                android:id="@+id/btn_open"
+                android:text="打开"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
     </LinearLayout>
+    <View
+        android:background="#e5e5e5"
+        android:layout_width="match_parent"
+        android:layout_height="1px"/>
 </LinearLayout>

@@ -4,8 +4,7 @@ package com.zsp.filedownloader;
  * Created by zsp on 2017/10/30.
  */
 
-public interface Const {
-    boolean DEBUG = true;
+public interface DownLoadState {
     int DOWNLOAD_STATE_WAIT = 0;
     int DOWNLOAD_STATE_CONNECT = 1;
     int DOWNLOAD_STATE_DOWNLOADING = 2;

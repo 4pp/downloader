@@ -19,7 +19,7 @@ public class MyApp extends Application {
     public void onCreate() {
         super.onCreate();
 
-        String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "ddd" + File.separator;
+        String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "world" + File.separator;
         Config cfg = new Config.Builder()
                 .setSaveDir(path)
                 .build();

@@ -57,10 +57,25 @@ public class TaskRecordDAO {
         return record;
     }
 
+    public List<TaskRecord> queryAll() {
+        return query(null,null);
+    }
+
+    public int existCount(String path,String name){
+        String whereClause = SqlConst.TB_TASK_URL + "=? and "+ SqlConst.TB_TASK_DIR_PATH+"=?";
+        String[] whereArgs = {path,name};
+        List<TaskRecord> list = query(whereClause,whereArgs);
+        return list.size();
+    }
+
     public List<TaskRecord> query(String whereClause, String[] whereArgs) {
         List list = null;
         SQLiteDatabase db = RecordManager.openDatabase();
-        String sql = "select * from "+ TABLE_NAME +" where "+whereClause;
+        String sql = "select * from "+ TABLE_NAME;
+        if (whereClause!=null){
+           sql +=" where "+whereClause;
+        }
+
         Cursor cursor = db.rawQuery(sql,whereArgs);
         if (cursor.getCount() > 0) {
             list = new LinkedList();
