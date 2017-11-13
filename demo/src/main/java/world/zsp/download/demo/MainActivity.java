@@ -9,15 +9,21 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 
 
 import java.io.File;
 
+import world.zsp.download.library.Config;
 import world.zsp.download.library.DownLoader;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
+
+    TextView saveDirView;
+    TextView maxTasksView;
+    TextView maxThreadView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +36,16 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(MainActivity.this, new String[]{android
                     .Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
         }
+
+        Config cfg = DownLoader.getInstance().getConfig();
+        saveDirView = (TextView) findViewById(R.id.save_dir);
+        saveDirView.setText(cfg.getSaveDir());
+
+        maxTasksView = (TextView) findViewById(R.id.max_tasks);
+        maxTasksView.setText(cfg.getMaxTasks()+"");
+
+        maxThreadView = (TextView) findViewById(R.id.max_thread);
+        maxThreadView.setText(cfg.getMaxThreads()+"");
 
         findViewById(R.id.btn_go).setOnClickListener(new View.OnClickListener() {
             @Override

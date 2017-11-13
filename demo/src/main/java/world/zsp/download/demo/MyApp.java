@@ -19,7 +19,10 @@ public class MyApp extends Application {
     public void onCreate() {
         super.onCreate();
 
-        String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "world" + File.separator;
+        //设置文件的下载目录
+        String path = Environment.getExternalStorageDirectory().getAbsolutePath() +
+                File.separator + "mydownload" + File.separator;
+
         Config cfg = new Config.Builder()
                 .setSaveDir(path)
                 .build();

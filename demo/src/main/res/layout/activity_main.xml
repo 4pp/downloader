@@ -14,10 +14,57 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!" />
+        android:text="本程序用于演示,一个简单的多任务多线程的下载器。当下载程序异常终断退出,或反复进入下载界面,都可以正确的继上次下载的进度继续下载。" />
+
+    <TextView
+        android:layout_marginTop="20dp"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:textColor="@color/colorPrimary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="下载保存目录" />
+    <TextView
+        tools:text="123123"
+        android:textSize="12sp"
+        android:id="@+id/save_dir"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:layout_marginTop="10dp"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:textColor="@color/colorPrimary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="最多同时下载任务数" />
+    <TextView
+        tools:text="123123"
+        android:textSize="12sp"
+        android:id="@+id/max_tasks"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:layout_marginTop="10dp"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:textColor="@color/colorPrimary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="每个任务的最大线程数量" />
+    <TextView
+        tools:text="123123"
+        android:textSize="12sp"
+        android:id="@+id/max_thread"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
     <Button
+        android:layout_marginTop="10dp"
         android:id="@+id/btn_go"
-        android:text="去下载"
+        android:text="下载演示"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 </LinearLayout>
