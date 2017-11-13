@@ -73,6 +73,20 @@ public class SubTaskRecordDAO {
         return query(whereClause,whereArgs);
     }
 
+    public long querySumByTaskId(long taskId) {
+        SQLiteDatabase db = RecordManager.openDatabase();
+        String sql = "select sum("+SqlConst.TB_THREAD_FINISHED+") from "+ TABLE_NAME +" where "+SqlConst.TB_TASK_ID+"=?";
+        String[] whereArgs = {String.valueOf(taskId)};
+        Cursor cursor = db.rawQuery(sql,whereArgs);
+        SubTaskRecord record = null;
+        long sum = 0;
+        if (cursor.moveToFirst()) {
+            sum = cursor.getLong(0);
+        }
+        cursor.close();
+        return sum;
+    }
+
 
     public List<SubTaskRecord> query(String whereClause, String[] whereArgs) {
         List list = null;

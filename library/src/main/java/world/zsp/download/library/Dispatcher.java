@@ -60,6 +60,10 @@ public class Dispatcher {
                         readyQueue.add(task);
                         runningQueue.put(task.getId(), task);
                     } else {
+                        if (record.getState() == DownLoadState.DOWNLOAD_STATE_DOWNLOADING){
+                            long finished = downLoader.getRecordManager().subTask().querySumByTaskId(record.getId());
+                            record.setFinishedLength(finished);
+                        }
                         record.setState(DownLoadState.DOWNLOAD_STATE_STOP);
                         stopQueue.add(task);
                         runningQueue.put(task.getId(), task);
