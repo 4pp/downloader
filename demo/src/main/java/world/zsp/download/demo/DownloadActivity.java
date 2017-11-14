@@ -54,12 +54,6 @@ public class DownloadActivity extends AppCompatActivity implements Toolbar.OnMen
         tabbar.setTextColor(ContextCompat.getColor(this,R.color.write));
         tabbar.setBackgroundColor(ContextCompat.getColor(this, R.color.colorPrimaryDark));
         tabbar.setTabIndicatorColor(ContextCompat.getColor(this,R.color.colorAccent));
-//        tabbar.setViewPager(mViewPager);
-//        tabbar.setCurrentTab(0);
-
-//        tabbar.setIndicatorColor(getResources().getColor(R.color.colorAccent));
-//        tabbar.setTextSelectColor(getResources().getColor(R.color.white));
-//        tabbar.setTextUnselectColor(getResources().getColor(R.color.white));
     }
 
     @Override
