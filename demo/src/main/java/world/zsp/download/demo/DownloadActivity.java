@@ -67,7 +67,7 @@ public class DownloadActivity extends AppCompatActivity implements Toolbar.OnMen
         switch (item.getItemId()){
             case R.id.action_add:
                 Log.d(TAG, "onMenuItemClick: 添加任务");
-                DownLoader.getInstance().add("http://res9.d.cn/android/yxzx.apk","yxzx");
+                DownLoader.getInstance().add("https://raw.githubusercontent.com/4pp/downloader/master/output/demo-release.apk");
                 break;
         }
         return false;
