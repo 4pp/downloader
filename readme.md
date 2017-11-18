@@ -11,8 +11,8 @@
 ![图3](https://github.com/4pp/downloader/blob/master/output/screenshot_3.png?raw=true)
 
 # 演示demo
-[点这里下载Demo的APK](https://raw.githubusercontent.com/4pp/downloader/master/output/demo-release.apk)
 ![扫码](https://github.com/4pp/downloader/blob/master/output/qrcode.png?raw=true)
+[点这里下载Demo的APK](https://raw.githubusercontent.com/4pp/downloader/master/output/demo-release.apk)
 
 # 下载流程
 1. 添加任务
