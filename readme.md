@@ -1,9 +1,9 @@
 # 项目说明
 这是一个精简轻量 android 下载框架。实现多任务多线程断点续传功能。并对下载任务的周期管理。
 # 设计目的
-1.不依赖其他第三方库
-2.精简，轻量，方便阅读修改
-3.使用简单零活方便
+1. 不依赖其他第三方库
+2. 精简，轻量，方便阅读修改
+3. 使用简单零活方便
 
 # 演示截图
 ![图1](https://github.com/4pp/downloader/blob/master/output/screenshot_1.png?raw=true)
@@ -15,15 +15,15 @@
 ![扫码](https://github.com/4pp/downloader/blob/master/output/qrcode.png?raw=true)
 
 # 下载流程
-1.添加任务
-2.任务添加到下载队列执行，或进入等待队列等待执行。
-3.进入下载队列的任务立即执行，首先进入网络链接中状态，触发 onTaskConnect 。获取下载数据长度。
-4.根据下载数据长度，判断是单线程还是多线程执行任务。
-5.成功获下载数据长度后，触发监听 onTaskStart。并开始下载。
-6.下载过程中 触发监听 onTaskProcess。
-7.在下载过程可以 stop 停止任务。进入停止状态。触发监听 onTaskStop。并唤醒其他的一个等待任务执行。
-8.停止的任务可以 restart 重新开始，会从上诉2重新开始这个过程。
-9.任务下载完成。触发监听 onTaskFinish。
+1. 添加任务
+2. 任务添加到下载队列执行，或进入等待队列等待执行。
+3. 进入下载队列的任务立即执行，首先进入网络链接中状态，触发 onTaskConnect 。获取下载数据长度。
+4. 根据下载数据长度，判断是单线程还是多线程执行任务。
+5. 成功获下载数据长度后，触发监听 onTaskStart。并开始下载。
+6. 下载过程中 触发监听 onTaskProcess。
+7. 在下载过程可以 stop 停止任务。进入停止状态。触发监听 onTaskStop。并唤醒其他的一个等待任务执行。
+8. 停止的任务可以 restart 重新开始，会从上诉2重新开始这个过程。
+9. 任务下载完成。触发监听 onTaskFinish。
 ![流程](https://github.com/4pp/downloader/blob/master/output/flow_chart.png?raw=true)
 
 # 使用方式
@@ -37,7 +37,7 @@
 ## 初始化
 在程序启动时，一般是 Application onCreate 方法中 设置一个下载文件的保存目录。 初始化时也会把保存的任务列表异步的加载到内存中。
 ```java
- //设置文件的下载目录
+//设置文件的下载目录
 String path = Environment.getExternalStorageDirectory().getAbsolutePath() +
         File.separator + "mydownload" + File.separator;
 
