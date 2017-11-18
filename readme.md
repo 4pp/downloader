@@ -12,12 +12,7 @@
 
 # 演示demo
 [点这里下载Demo的APK](https://raw.githubusercontent.com/4pp/downloader/master/output/demo-release.apk)
-或扫码下载
 ![扫码](https://github.com/4pp/downloader/blob/master/output/qrcode.png?raw=true)
-# 设计思路
-对于断点的记录的技术点是数据的持久化，和保存数据格式的设计上。用 sqlite 或用其它的 Android 持久化方式。实现相应的增删改查功能。
-HTTP1.1 协议（RFC2616）开始支持获取文件的部分内容，这为并行下载以及断点续传提供了技术支持。它通过在 Header 里两个参数实现的，客户端发请求时对应的是 Range ，服务器端响应时对应的是 Content-Range。
-多任务和多线程，用 java 的线程池来做控制。用队列来管理不同状态下的任务。等待队列-停止队列-下载队列-任务完成队列。同时利用 java RandomAccessFile seek方法跳转到指定位置写入数据。
 
 # 下载流程
 1.添加任务
@@ -38,6 +33,7 @@ HTTP1.1 协议（RFC2616）开始支持获取文件的部分内容，这为并�
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 ```
 *** 注：Android 6.0版本(Api 23) 动态权限的处理 ***
+
 ## 初始化
 在程序启动时，一般是 Application onCreate 方法中 设置一个下载文件的保存目录。 初始化时也会把保存的任务列表异步的加载到内存中。
 ```java
@@ -49,7 +45,6 @@ Config cfg = new Config.Builder()
         .setSaveDir(path)
         .build();
 DownLoader.init(this,cfg);
-*** 注:如是一个多进程项目，避免 Application onCreate 中重复执行 init初始化方法。
 ```
 ## 注册监听
 可以实现 DownLoadListener 接口的几个回调方法,来处理一个任务在不同状态下的处理方式。然后通过 registerListener(this); 注册这个监听。也可以注册多个不同的监听对象。
@@ -97,12 +92,15 @@ public void onTaskError(Task task, String msg) {
 DownLoader.getInstance().registerListener(this);
 
 ```
+*** 注:如是一个多进程项目，避免 Application onCreate 中重复执行 init初始化方法。***
+
 ## 取消监听
 记得在合适的位置（如 onDestory 方法中）调用 unregisterListener() 方法解除这个监听。
 ```java
 DownLoader.getInstance().registerListener(this);
 ```
 所有暴露的方法均在 DownLoader 的单例对象中调用。
+
 ## 添加任务
 add 方法相当于请求下载，会把请求任务添加到下载队列中，如没超出最大的并发任务数（maxTasks）则直接放入下载队列执行，反之放到等待队列，当有其他任务下载完成后，会自动唤醒等待的任务。按下载数据量的大小（可配置）划分单线程或多个线程执行。 add 方法返回一个 id，用于后边操作这个任务。此方法触发 onAddTask 监听方法。对于重复的下载链接，用源文件名加数字序号的方式重命名下载文件。
 ```java
