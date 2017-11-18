@@ -22,7 +22,7 @@
 5. 成功获下载数据长度后，触发监听 onTaskStart。并开始下载。
 6. 下载过程中 触发监听 onTaskProcess。
 7. 在下载过程可以 stop 停止任务。进入停止状态。触发监听 onTaskStop。并唤醒其他的一个等待任务执行。
-8. 停止的任务可以 restart 重新开始，会从上诉2重新开始这个过程。
+8. 停止的任务可以 restart 重新开始，会从2步重新开始这个过程。
 9. 任务下载完成。触发监听 onTaskFinish。
 ![流程](https://github.com/4pp/downloader/blob/master/output/flow_chart.png?raw=true)
 
@@ -42,8 +42,11 @@ String path = Environment.getExternalStorageDirectory().getAbsolutePath() +
         File.separator + "mydownload" + File.separator;
 
 Config cfg = new Config.Builder()
-        .setSaveDir(path)
-        .build();
+    .setSaveDir(path)
+    .setMaxTasks(5) //最大并发下载任务数量,默认5
+    .setMaxThreads(3)//每个下载任务的最大线程数量默认3
+    .setSingleTaskThreshold(100)//判断单或或线程下载的数据量,大于则多线程 ,小于则单个线程下载, 单位KB
+    .build();
 DownLoader.init(this,cfg);
 ```
 ## 注册监听
