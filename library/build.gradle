@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.novoda.bintray-release'
 
 android {
     compileSdkVersion 26
@@ -19,6 +20,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    lintOptions {
+         abortOnError false
+    }
+
 }
 
 dependencies {
@@ -28,4 +33,13 @@ dependencies {
     })
     compile 'com.android.support:appcompat-v7:26.0.0-alpha1'
     testCompile 'junit:junit:4.12'
+}
+
+publish {
+    userOrg = '4pp' //bintray.com 用户名
+    groupId = 'world.zsp' //jcenter 上的路径
+    artifactId = rootProject.name // 项目名称
+    publishVersion =  project.version
+    desc = 'Android multi tasking multi-threaded HTTP download library' //项目描述
+    website = 'https://github.com/4pp/downloader'// 项目地址
 }

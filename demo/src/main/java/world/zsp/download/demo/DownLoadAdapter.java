@@ -15,6 +15,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 
 import world.zsp.download.library.DownLoadState;
 import world.zsp.download.library.Task;
@@ -27,7 +28,7 @@ public class DownLoadAdapter extends BaseAdapter{
 
     private static final String TAG = "DownLoadAdapter";
 
-    SimpleDateFormat sf = new SimpleDateFormat("HH:mm:ss MM/dd");
+    SimpleDateFormat sf = new SimpleDateFormat("HH:mm:ss MM/dd", Locale.CHINESE);
     Context ctx;
     Listener listener;
     List<Task> dataSource;

@@ -89,7 +89,7 @@ public class SubTaskRecordDAO {
 
 
     public List<SubTaskRecord> query(String whereClause, String[] whereArgs) {
-        List list = null;
+        List<SubTaskRecord> list = null;
         SQLiteDatabase db = RecordManager.openDatabase();
         String sql = "select * from "+ TABLE_NAME +" where "+whereClause;
         Cursor cursor = db.rawQuery(sql,whereArgs);

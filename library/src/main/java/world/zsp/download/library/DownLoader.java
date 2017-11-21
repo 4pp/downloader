@@ -273,7 +273,7 @@ public class DownLoader {
                 saveName = "download-" + System.currentTimeMillis();
             }
         } else {
-            if (saveName.indexOf(".") == -1) {
+            if (!saveName.contains(".")) {
                 String suffix = url.substring(url.lastIndexOf("."));
                 if (!TextUtils.isEmpty(suffix)) {
                     saveName = fileName + suffix;

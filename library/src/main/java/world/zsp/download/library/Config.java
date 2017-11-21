@@ -45,7 +45,7 @@ public class Config {
     }
 
 
-    public Config(Builder builder) {
+    private Config(Builder builder) {
         saveDir = builder.saveDir;
         maxTasks = builder.maxTasks;
         maxThreads = builder.maxThreads;
@@ -134,8 +134,7 @@ public class Config {
         }
 
         public Config build() {
-            Config config = new Config(this);
-            return config;
+            return new Config(this);
         }
 
     }
