@@ -1,6 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.novoda.bintray-release'
 
+
 android {
     compileSdkVersion 26
     buildToolsVersion "26.0.2"
@@ -10,7 +11,6 @@ android {
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
-
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
     }
@@ -39,7 +39,7 @@ publish {
     userOrg = '4pp' //bintray.com 用户名
     groupId = 'world.zsp' //jcenter 上的路径
     artifactId = rootProject.name // 项目名称
-    publishVersion =  project.version
+    publishVersion =  '1.0'
     desc = 'Android multi tasking multi-threaded HTTP download library' //项目描述
     website = 'https://github.com/4pp/downloader'// 项目地址
 }

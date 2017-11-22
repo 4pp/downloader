@@ -33,7 +33,21 @@
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 ```
 *** 注：Android 6.0版本(Api 23) 动态权限的处理 ***
+## 依赖
+在Gradle文件中引入
+- Gradle
 
+    compile 'world.zsp:downloader:1.0'
+
+- 或 Maven
+```xml
+<dependency>
+  <groupId>world.zsp</groupId>
+  <artifactId>downloader</artifactId>
+  <version>1.0</version>
+  <type>pom</type>
+</dependency>
+```
 ## 初始化
 在程序启动时，一般是 Application onCreate 方法中 设置一个下载文件的保存目录。 初始化时也会把保存的任务列表异步的加载到内存中。
 ```java

@@ -13,11 +13,11 @@ import java.util.zip.ZipInputStream;
 public class Utils {
 
     /**
-     * 递增序号的新文件名
+     * 递增序号文件重命名
      *
-     * @param count
-     * @param filename
-     * @return
+     * @param count 同名数量
+     * @param filename 原来的文件名
+     * @return 新名称
      */
     public static String createIncreaseFilename(int count, String filename) {
 
