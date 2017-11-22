@@ -36,9 +36,9 @@
 ## 依赖
 在Gradle文件中引入
 - Gradle
-
+```
     compile 'world.zsp:downloader:1.0'
-
+```
 - 或 Maven
 ```xml
 <dependency>
